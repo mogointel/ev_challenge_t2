@@ -1,4 +1,5 @@
 import datetime
+import time
 
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
@@ -10,6 +11,7 @@ from ev_system.db import get_db
 
 bp = Blueprint('request', __name__)
 
+
 @bp.route('/')
 def index():
     return render_template('request/index.html')
@@ -18,49 +20,51 @@ def index():
 @bp.route('/schedule')
 def schedule():
     db = get_db()
-    duration = request.args.get('req_duration', None)
+    duration = int(request.args.get('req_duration', None))
     curr_time = datetime.datetime(year=2022, month=6, day=8, hour=10,
                                   minute=0)  # datetime.datetime.now() TODO: remove this comment
     turn_around = 30 # TODO: get from config
-    start_time = request.args.get('req_start', None)
-    end_time = datetime.datetime.strptime(start_time, '%Y-%m-%d, %HH:%MM').replace(hour=18, minute=0)
+    start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%dT%H:%M')
+    end_time = start_time.replace(hour=18, minute=0)
+    unix_time = int(time.mktime(start_time.timetuple()))
     requests = db.execute(
-        'SELECT p.id, start_time, end_time, station_id'
-        ' FROM requests p JOIN slots s ON p.station_id = s.id'
-        ' WHERE p.start_time >= ?'
-        ' AND p.end_time < ?'        
-        ' ORDER BY start_time ASC', (start_time, end_time)
+        'SELECT r.id, start_time, end_time, station_id'
+        ' FROM requests r JOIN slots s on r.station_id = s.id'
+        ' WHERE start_time > ?'
+        ' ORDER BY start_time ASC', [start_time]
     ).fetchall()
     station_ids = db.execute(
-        'SELECT s.id FROM slots s'
+        'SELECT id FROM slots WHERE status != \'disabled\''
     ).fetchall()
-    stations = list(station_ids)
+    stations = [s[0] for s in station_ids]
     available_slots = {}
 
     # duration_offset = duration % 60
     # if curr_time.minute > duration_offset:
     #     curr_time.hour = curr_time.hour + 1
     while curr_time < end_time:
-        available_slots[curr_time] = stations
+        available_slots[curr_time] = list(stations)
         curr_time = curr_time + datetime.timedelta(minutes=duration)
 
     for req in requests:
-        req_time = datetime.datetime.strptime(req['start_time'], '%Y-%m-%d, %HH:%MM')
+        req_start_time = req['start_time']
+        req_end_time = req['end_time']
         req_station_id = req['station_id']
-        if req_time in available_slots.keys():
-            slot_stations = available_slots[req_time]
-            if req_station_id in slot_stations:
-                slot_stations.remove(req_station_id)
-                available_slots[req_time] = slot_stations
+        curr_time = req_start_time
+        while curr_time <= req_end_time:
+            if curr_time in available_slots.keys():
+                slot_stations = available_slots[curr_time]
+                if req_station_id in slot_stations:
+                    slot_stations.remove(req_station_id)
+                    available_slots[curr_time] = slot_stations
+            curr_time = curr_time + datetime.timedelta(minutes=duration)
+
+    return render_template('request/schedule.html', slots=available_slots)
 
 
-
-    return render_template('request/schedule.html', requests=available_slots)
-
-
-@bp.route('/create', methods=('GET', 'POST'))
+@bp.route('/request', methods=('GET', 'POST'))
 @login_required
-def create():
+def request_page():
     if request.method == 'POST':
         duration = request.form['duration']
         start_date = request.form['start_date']
@@ -81,7 +85,12 @@ def create():
             # db.commit()
             return redirect(url_for('request.schedule', req_duration=duration, req_start=start_date))
 
-    return render_template('request/create.html')
+    return render_template('request/request.html')
+
+
+@bp.route('/create', methods=('GET', 'POST'))
+def create():
+    return redirect(url_for('request.index'))
 
 
 def get_request(id, check_author=True):
