@@ -1,0 +1,33 @@
+DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS requests;
+DROP TABLE IF EXISTS station;
+
+CREATE TABLE user (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  wwid TEXT NOT NULL,
+  license TEXT NOT NULL,
+  car_type TEXT NOT NULL,
+  monthly_credits INTEGER NOT NULL,
+  current_credits INTEGER NOT NULL
+);
+
+CREATE TABLE requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  requester_id INTEGER NOT NULL,
+  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  start_time DATE NOT NULL,
+  end_time DATE NOT NULL,
+  station_id INTEGER NOT NULL,
+  FOREIGN KEY (requester_id) REFERENCES user (id),
+  FOREIGN KEY (station_id) REFERENCES  station (id)
+);
+
+CREATE TABLE station (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  position TEXT NOT NULL,
+  total_slots INTEGER NOT NULL,
+  slot_duration INTEGER NOT NULL
+);

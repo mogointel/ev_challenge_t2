@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}New Request{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="duration">Duration</label>
+    <select name="duration" id="duration" size="3">
+        <option selected="selected" value="30">Up to 30 min</option>
+        <option value="60">Up to 60 min</option>
+        <option value="120">Up to 120 min</option>
+        <option value="240">Up to 240 min</option>
+    </select>
+    <label for="start_date"></label>
+    <input type="datetime-local" name="start_date" id="start_date" value="{{ now(False) }}" min="{{ now(False) }}"></input>
+    <input type="submit" value="Search">
+  </form>
+{% endblock %}
