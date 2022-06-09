@@ -9,7 +9,7 @@ def fmt_now(is_short=True):
     dt = datetime.datetime(year=2022, month=6, day=8, hour=10, minute=0)
     fmt = "%Y-%m-%d"
     if not is_short:
-        fmt += ", %H:%M"
+        fmt += "T%H:%M"
     return dt.strftime(fmt)
 
 

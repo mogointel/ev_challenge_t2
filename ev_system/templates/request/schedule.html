@@ -1,5 +1,12 @@
 {% extends 'base.html' %}
 
+{% block script %}
+    function create_request(start, stations)
+    {
+        window.open("create?start_time=" + start + "&stations=" + stations, "_self")
+    }
+{% endblock %}
+
 {% block header %}
   <h1>{% block title %}Requests{% endblock %}</h1>
   {% if g.user %}
@@ -8,18 +15,14 @@
 {% endblock %}
 
 {% block content %}
-  {% for post in posts %}
+  {% for slot, stations in slots.items() %}
     <article class="post">
       <header>
-        <div>
-          <h1>{{ post['title'] }}</h1>
-          <div class="about">by {{ post['username'] }} on {{ post['created'].strftime('%Y-%m-%d') }}</div>
+        <div onclick="create_request('{{ slot }}', '{{ stations }}')">
+          <h1>{{ slot }}</h1>
+          <div class="about">{{ stations }}</div>
         </div>
-        {% if g.user['id'] == post['author_id'] %}
-          <a class="action" href="{{ url_for('request.update', id=post['id']) }}">Edit</a>
-        {% endif %}
       </header>
-      <p class="body">{{ post['body'] }}</p>
     </article>
     {% if not loop.last %}
       <hr>
