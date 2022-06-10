@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
 {% block script %}
-    function create_request(start, stations)
+    function create_request(start, stations, duration)
     {
-        window.open("create?start_time=" + start + "&stations=" + stations, "_self")
+        window.open("create?start_time=" + start + "&stations=" + stations + "&duration=" + duration, "_self")
     }
 {% endblock %}
 
 {% block header %}
   <h1>{% block title %}Requests{% endblock %}</h1>
   {% if g.user %}
-    <a class="action" href="{{ url_for('request.create') }}">New</a>
+    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
   {% endif %}
 {% endblock %}
 
@@ -18,7 +18,7 @@
   {% for slot, stations in slots.items() %}
     <article class="post">
       <header>
-        <div onclick="create_request('{{ slot }}', '{{ stations }}')">
+        <div onclick="create_request('{{ slot }}', '{{ stations }}', '{{ duration }}')">
           <h1>{{ slot }}</h1>
           <div class="about">{{ stations }}</div>
         </div>

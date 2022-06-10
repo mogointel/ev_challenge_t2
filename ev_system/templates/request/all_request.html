@@ -3,7 +3,7 @@
 {% block header %}
   <h1>{% block title %}Requests{% endblock %}</h1>
   {% if g.user %}
-    <a class="action" href="{{ url_for('request.create') }}">New</a>
+    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
   {% endif %}
 {% endblock %}
 
@@ -12,11 +12,11 @@
     <article class="post">
       <header>
         <div>
-          <h1>{{ request['station_id'] }} @ {{ request['start_time'] }}</h1>
+          <h1>{{ request['position'] }} @ {{ request['start_time'] }}</h1>
           <div class="about">by {{ request['username'] }} on {{ request['created'].strftime('%Y-%m-%d') }}</div>
         </div>
         {% if g.user['id'] == request['requester_id'] %}
-          <a class="action" href="{{ url_for('request.update', id=request['id']) }}">Edit</a>
+          <a class="action" href="{{ url_for('request.update', id=request['id']) }}">Cancel</a>
         {% endif %}
       </header>
       <p class="body">{{ request['body'] }}</p>
