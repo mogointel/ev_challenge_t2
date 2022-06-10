@@ -2,6 +2,8 @@ import datetime
 import os
 
 from flask import Flask
+from flask_qrcode import QRcode
+from flask_apscheduler import APScheduler
 
 
 def fmt_now(is_short=True):
@@ -54,6 +56,14 @@ def create_app(test_config=None):
     @app.context_processor
     def now_processor():
         return dict(now=fmt_now)
+
+    QRcode(app)
+
+    scheduler = APScheduler()
+    scheduler.init_app(app)
+    from . import system
+    scheduler.add_job(id='periodic-task', func=system.periodic_check, trigger='interval', seconds=10)
+    scheduler.start()
 
     from . import db
     db.init_app(app)

@@ -16,8 +16,24 @@ def get_db():
     return g.db
 
 
+def get_db_ext():
+    db = sqlite3.connect(
+            current_app.config['DATABASE'],
+            detect_types=sqlite3.PARSE_DECLTYPES
+    )
+    db.row_factory = sqlite3.Row
+
+    return db
+
+
 def close_db(e=None):
     db = g.pop('db', None)
+
+    if db is not None:
+        db.close()
+
+
+def close_db_ext(db, e=None):
 
     if db is not None:
         db.close()
