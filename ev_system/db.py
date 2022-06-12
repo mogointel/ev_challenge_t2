@@ -17,9 +17,8 @@ def get_db():
 
 
 def get_db_ext():
-    db = sqlite3.connect(
-            current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
+    db = sqlite3.connect('../instance/ev_system.sqlite',
+                         detect_types=sqlite3.PARSE_DECLTYPES
     )
     db.row_factory = sqlite3.Row
 
