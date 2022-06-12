@@ -5,16 +5,15 @@
 {% endblock %}
 
 {% block content %}
-  <form method="post">
+  <form method="post" class="w3-container w3-card-4">
     <label for="duration">Duration</label>
-    <select name="duration" id="duration" size="3">
-        <option selected="selected" value="30">30 min</option>
-        <option value="60">60 min</option>
-        <option value="120">120 min</option>
-        <option value="240">240 min</option>
+    <select class="w3-input" name="duration" id="duration">
+        {% for duration in durations %}
+        <option {% if loop.first %} selected="selected" {% endif %} value="{{ duration['id'] }}">{{ duration['name'] }}</option>
+        {% endfor %}
     </select>
     <label for="start_date"></label>
-    <input type="datetime-local" name="start_date" id="start_date" value="{{ now(False) }}" min="{{ now(False) }}"></input>
-    <input type="submit" value="Search">
+    <input class="w3-input" type="datetime-local" name="start_date" id="start_date" value="{{ now(False) }}" min="{{ now(False) }}"></input>
+    <input class="w3-input" type="submit" value="Search">
   </form>
 {% endblock %}

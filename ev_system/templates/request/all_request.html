@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block meta %}
+<!--<meta http-equiv="refresh" content="20" >-->
+{% endblock %}
+
 {% block header %}
   <h1>{% block title %}Requests{% endblock %}</h1>
   {% if g.user %}
@@ -8,21 +12,23 @@
 {% endblock %}
 
 {% block content %}
+    <div class="w3-content" style="max-width: 500px">
   {% for request in requests %}
-    <article class="post">
-      <header>
-        <div>
-          <h1>{{ request['position'] }} @ {{ request['start_time'] }}</h1>
-          <div class="about">by {{ request['username'] }} on {{ request['created'].strftime('%Y-%m-%d') }}</div>
-        </div>
-        {% if g.user['id'] == request['requester_id'] %}
-          <a class="action" href="{{ url_for('request.update', id=request['id']) }}">Cancel</a>
-        {% endif %}
-      </header>
-      <p class="body">{{ request['body'] }}</p>
-    </article>
+
+    <div class="w3-card-2">
+    <div class="w3-cell-row">
+    <div  class="w3-cell">
+          <h4>{{ request['position'] }} @ {{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}</h4>
+          <div>by {{ request['username'] }} on {{ request['created'].strftime('%Y-%m-%d') }}</div>
+    </div>
+
+    <a class="w3-button w3-cell w3-cell-middle" href="{{ url_for('request.update', id=request['id']) }}">Cancel</a>
+
+    </div>
+      </div>
     {% if not loop.last %}
       <hr>
     {% endif %}
   {% endfor %}
+    </div>
 {% endblock %}

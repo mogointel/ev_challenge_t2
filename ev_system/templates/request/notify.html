@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block meta %}
+<!--<meta http-equiv="refresh" content="20" >-->
+{% endblock %}
+
+{% block header %}
+  <h1>{% block title %}Upcoming Request{% endblock %}</h1>
+  {% if g.user %}
+    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="w3-content w3-card-4 w3-pale-green w3-center">
+        <h2>Please move your</h2>
+        <h2> car to:</h2>
+    <h1>{{ requests['position'] }}</h1>
+    <h3>By {{ requests['start_time'].strftime('%H:%M') }}</h3>
+    </div>
+
+    <a class="w3-button w3-green w3-circle w3-display-middle" style="size: 100%" href="{{ url_for('request.start', id=requests['id']) }}">Start</a>
+
+{% endblock %}

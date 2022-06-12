@@ -4,11 +4,25 @@ import os
 from flask import Flask
 from flask_qrcode import QRcode
 from flask_apscheduler import APScheduler
+from . import db
+from . import server_time
+from . import system
+
+
+scheduler = APScheduler()
+
+
+def periodic_check():
+    global scheduler
+    # app = Flask.app_context()
+    with scheduler.app.app_context():
+        d = db.get_db()
+        system.periodic_check(d)
 
 
 def fmt_now(is_short=True):
     # dt = datetime.datetime.now()  # TODO: restore this line to use current datetime
-    dt = datetime.datetime(year=2022, month=6, day=8, hour=10, minute=0)
+    dt = server_time.server_now()
     fmt = "%Y-%m-%d"
     if not is_short:
         fmt += "T%H:%M"
@@ -16,6 +30,8 @@ def fmt_now(is_short=True):
 
 
 def create_app(test_config=None):
+    global scheduler
+
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -59,13 +75,14 @@ def create_app(test_config=None):
 
     QRcode(app)
 
-    scheduler = APScheduler()
+    #scheduler = APScheduler()
     scheduler.init_app(app)
-    from . import system
-    scheduler.add_job(id='periodic-task', func=system.periodic_check, trigger='interval', seconds=10)
+    #from . import system
+    scheduler.add_job(id='periodic-task', func=periodic_check, trigger='interval', seconds=10)
     scheduler.start()
 
-    from . import db
+
+    #from . import db
     db.init_app(app)
 
     from . import auth

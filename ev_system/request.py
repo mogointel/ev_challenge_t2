@@ -1,5 +1,6 @@
 import datetime
 import time
+from . import server_time
 
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for
@@ -16,12 +17,24 @@ bp = Blueprint('request', __name__)
 @login_required
 def index():
     db = get_db()
+
+    requests = db.execute(
+        'SELECT r.id, start_time, end_time, created, position, requester_id, username'
+        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.station_id = s.id'
+        ' WHERE requester_id == ? AND r.status == \'notify\''
+        ' ORDER BY start_time ASC', [g.user['id']]
+    ).fetchone()
+
+    if requests is not None:
+        return render_template('request/notify.html', requests=requests)
+
     requests = db.execute(
         'SELECT r.id, start_time, end_time, created, position, requester_id, username'
         ' FROM requests r join user u on r.requester_id = u.id join slots s on r.station_id = s.id'
         ' WHERE requester_id == ?'
         ' ORDER BY start_time ASC', [g.user['id']]
     ).fetchall()
+
     return render_template('request/all_request.html', requests=requests)
 
 
@@ -29,17 +42,25 @@ def index():
 @login_required
 def schedule():
     db = get_db()
-    duration = int(request.args.get('req_duration', None))
-    curr_time = datetime.datetime(year=2022, month=6, day=8, hour=10,
-                                  minute=0)  # datetime.datetime.now() TODO: remove this comment
+    duration_id = int(request.args.get('req_duration', None))
+    curr_time = server_time.server_now()
+    db = get_db()
+    duration_db = db.execute(
+        'SELECT *'
+        ' FROM durations'
+        ' WHERE id = ?', [duration_id]
+    ).fetchone()
+
+    duration = {'duration': int(duration_db['duration']), 'cost_weight': float(duration_db['cost_weight'])}
+
     turn_around = 30 # TODO: get from config
     start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%dT%H:%M')
-    end_time = start_time.replace(hour=18, minute=0)
+    end_time = start_time + datetime.timedelta(minutes=duration['duration'])
     requests = db.execute(
         'SELECT r.id, start_time, end_time, station_id'
         ' FROM requests r JOIN slots s on r.station_id = s.id'
-        ' WHERE start_time > ?'
-        ' ORDER BY start_time ASC', [start_time]
+        ' WHERE (? BETWEEN start_time AND end_time) or (? BETWEEN start_time AND end_time) '
+        ' ORDER BY start_time ASC', [start_time, end_time]
     ).fetchall()
     station_ids = db.execute(
         'SELECT id FROM slots WHERE status != \'disabled\''
@@ -47,12 +68,14 @@ def schedule():
     stations = [s[0] for s in station_ids]
     available_slots = {}
 
+
     # duration_offset = duration % 60
     # if curr_time.minute > duration_offset:
     #     curr_time.hour = curr_time.hour + 1
+    end_time = start_time.replace(hour=18, minute=0)
     while curr_time < end_time:
         available_slots[curr_time] = list(stations)
-        curr_time = curr_time + datetime.timedelta(minutes=duration)
+        curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
     for req in requests:
         req_start_time = req['start_time']
@@ -65,7 +88,7 @@ def schedule():
                 if req_station_id in slot_stations:
                     slot_stations.remove(req_station_id)
                     available_slots[curr_time] = slot_stations
-            curr_time = curr_time + datetime.timedelta(minutes=duration)
+            curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
     return render_template('request/schedule.html', slots=available_slots, duration=duration)
 
@@ -79,14 +102,31 @@ def request_page():
         error = None
 
         if not start_date:
-            error = 'Title is required.'
+            error = 'No start date supplied'
 
         if error is not None:
             flash(error)
         else:
             return redirect(url_for('request.schedule', req_duration=duration, req_start=start_date))
 
-    return render_template('request/request.html')
+    db = get_db()
+    durations_db = db.execute(
+        'SELECT *'
+        ' FROM durations'
+        ' ORDER BY duration ASC'
+    ).fetchall()
+
+    user_credits = g.user['current_credits']
+
+    durations = {}
+    for d in durations_db:
+        dur = int(d['duration'])
+        cost_w = float(d['cost_weight'])
+        cost = int(float(dur) * cost_w)
+        has_credit = cost <= user_credits
+        durations[d['id']] = {'name': d['name'], 'duration': dur, 'cost': cost, 'id': d['id'], 'has_credit': has_credit}
+
+    return render_template('request/request.html', durations=durations_db)
 
 
 @bp.route('/create', methods=('GET', 'POST'))
@@ -193,3 +233,10 @@ def delete(id):
     db.execute('DELETE FROM post WHERE id = ?', (id,))
     db.commit()
     return redirect(url_for('request.index'))
+
+@bp.route('/<int:id>/start')
+@login_required
+def start(id):
+    r = get_request(id)
+
+    return render_template('request/start.html')
