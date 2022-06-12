@@ -13,6 +13,7 @@ bp = Blueprint('request', __name__)
 
 
 @bp.route('/')
+@login_required
 def index():
     db = get_db()
     requests = db.execute(
