@@ -19,7 +19,7 @@
     <article class="post">
       <header>
         <div onclick="create_request('{{ slot }}', '{{ stations }}', '{{ duration }}')">
-          <h1>{{ slot }}</h1>
+          <h1>{{ slot.strftime('%d-%m-%Y %H:%M') }}</h1>
           <div class="about">{{ stations }}</div>
         </div>
       </header>

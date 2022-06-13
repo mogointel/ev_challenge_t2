@@ -43,7 +43,6 @@ def index():
 def schedule():
     db = get_db()
     duration_id = int(request.args.get('req_duration', None))
-    curr_time = server_time.server_now()
     db = get_db()
     duration_db = db.execute(
         'SELECT *'
@@ -54,27 +53,31 @@ def schedule():
     duration = {'duration': int(duration_db['duration']), 'cost_weight': float(duration_db['cost_weight'])}
 
     turn_around = 30 # TODO: get from config
+    #curr_time = server_time.server_now()
     start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%dT%H:%M')
-    end_time = start_time + datetime.timedelta(minutes=duration['duration'])
+    end_time = start_time.replace(hour=18, minute=0)
     requests = db.execute(
         'SELECT r.id, start_time, end_time, station_id'
         ' FROM requests r JOIN slots s on r.station_id = s.id'
-        ' WHERE (? BETWEEN start_time AND end_time) or (? BETWEEN start_time AND end_time) '
-        ' ORDER BY start_time ASC', [start_time, end_time]
+        ' WHERE (start_time BETWEEN ? AND ?) or (end_time BETWEEN ? AND ?) '
+        ' ORDER BY start_time ASC', [start_time, end_time, start_time, end_time]
     ).fetchall()
-    station_ids = db.execute(
-        'SELECT id FROM slots WHERE status != \'disabled\''
+    station_db = db.execute(
+        'SELECT id, position FROM slots s WHERE (status != \'disabled\') AND (? BETWEEN min_slot_duration and max_slot_duration)', [duration['duration']]
     ).fetchall()
-    stations = [s[0] for s in station_ids]
+    #stations_names = [s[1] for s in station_db]
+    stations_ids = [s[0] for s in station_db]
     available_slots = {}
 
+    curr_time = start_time
+    duration_offset = duration['duration'] % 60
+    if curr_time.minute > duration_offset:
+        curr_time = curr_time.replace(minute=0, hour=curr_time.hour+1)
+    else:
+        curr_time = curr_time.replace(minute=duration_offset)
 
-    # duration_offset = duration % 60
-    # if curr_time.minute > duration_offset:
-    #     curr_time.hour = curr_time.hour + 1
-    end_time = start_time.replace(hour=18, minute=0)
     while curr_time < end_time:
-        available_slots[curr_time] = list(stations)
+        available_slots[curr_time] = list(stations_ids)
         curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
     for req in requests:
@@ -90,7 +93,7 @@ def schedule():
                     available_slots[curr_time] = slot_stations
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
-    return render_template('request/schedule.html', slots=available_slots, duration=duration)
+    return render_template('request/schedule.html', slots=available_slots, duration=duration_id)
 
 
 @bp.route('/request', methods=('GET', 'POST'))

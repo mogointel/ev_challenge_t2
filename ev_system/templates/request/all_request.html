@@ -13,22 +13,21 @@
 
 {% block content %}
     <div class="w3-content" style="max-width: 500px">
+    <div class="w3-ul">
   {% for request in requests %}
 
-    <div class="w3-card-2">
+    <li class="w3-card-2">
     <div class="w3-cell-row">
     <div  class="w3-cell">
           <h4>{{ request['position'] }} @ {{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}</h4>
-          <div>by {{ request['username'] }} on {{ request['created'].strftime('%Y-%m-%d') }}</div>
+          <div>created on {{ request['created'].strftime('%d-%m-%Y') }}</div>
     </div>
 
     <a class="w3-button w3-cell w3-cell-middle" href="{{ url_for('request.update', id=request['id']) }}">Cancel</a>
 
     </div>
-      </div>
-    {% if not loop.last %}
-      <hr>
-    {% endif %}
+      </li>
   {% endfor %}
+    </div>
     </div>
 {% endblock %}

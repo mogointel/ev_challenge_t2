@@ -7,17 +7,17 @@
 {% block content %}
   <form method="post">
     <label for="username">Username</label>
-    <input name="username" id="username" required>
+    <input class="w3-input" name="username" id="username" required>
     <label for="password">Password</label>
-    <input type="password" name="password" id="password" required>
+    <input class="w3-input" type="password" name="password" id="password" required>
     <label for="email">Intel E-Mail</label>
-    <input name="email" id="email" type="email" required>
+    <input class="w3-input" name="email" id="email" type="email" required>
     <label for="wwid">WWID</label>
-    <input type="number" name="wwid" id="wwid" required>
+    <input class="w3-input" type="number" name="wwid" id="wwid" required>
     <label for="license">Car License</label>
-    <input type="number" name="license" id="license" required>
+    <input class="w3-input" type="number" name="license" id="license" required>
     <label for="car_type">Car Type</label>
-    <input type="text" name="car_type" id="car_type" required>
-    <input type="submit" value="Register">
+    <input class="w3-input" type="text" name="car_type" id="car_type" required>
+    <input class="w3-input w3-button" type="submit" value="Register">
   </form>
 {% endblock %}
