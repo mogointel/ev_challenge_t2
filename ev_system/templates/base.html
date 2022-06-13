@@ -25,7 +25,7 @@
 
 <nav class="w3-bar w3-theme-d1 w3-mobile">
     {% if g.user %}
-      <div class="w3-bar-item"> {{ g.user['username'] }} </div>
+      <a href="{{ url_for('request.index') }}" class="w3-bar-item w3-button"> {{ g.user['username'] }} </a>
         <div class="w3-bar-item w3-theme-l1">Credits: {{ g.user['current_credits'] }}</div>
       <a href="{{ url_for('auth.logout') }}" class="w3-bar-item w3-button w3-right">Log Out</a>
     {% else %}
