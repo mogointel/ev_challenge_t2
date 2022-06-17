@@ -91,6 +91,9 @@ def schedule():
                 if req_station_id in slot_stations:
                     slot_stations.remove(req_station_id)
                     available_slots[curr_time] = slot_stations
+                    if len(slot_stations) == 0:
+                        available_slots.pop(curr_time)
+                        print("No available stations for slot {}".format(curr_time))
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
     return render_template('request/schedule.html', slots=available_slots, duration=duration_id)
@@ -108,7 +111,7 @@ def request_page():
             error = 'No start date supplied'
 
         if error is not None:
-            flash(error)
+            flash(error, 'error')
         else:
             return redirect(url_for('request.schedule', req_duration=duration, req_start=start_date))
 
@@ -175,6 +178,7 @@ def create():
         (g.user['id'], start_time, end_time, available_station, duration, 'pending')
     )
     db.commit()
+    flash("Added request for {} minutes @ {} on {}".format(duration, available_station, start_time))
     return redirect(url_for('request.index'))
 
 
@@ -204,7 +208,7 @@ def update(id):
         error = None
 
         if error is not None:
-            flash(error)
+            flash(error, "error")
         else:
             # db = get_db()
             # db.execute(

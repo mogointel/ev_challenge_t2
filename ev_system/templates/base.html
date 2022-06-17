@@ -38,8 +38,19 @@
     {% block header %}{% endblock %}
 </header>
 
-{% for message in get_flashed_messages() %}
-<div class="w3-panel w3-theme w3-mobile">{{ message }}</div>
+{% for message in get_flashed_messages(with_categories=True) %}
+<div class="w3-panel w3-theme w3-mobile
+{% if message[0] == 'error' %}
+w3-red
+{% elif message[0] == 'warning' %}
+w3-yellow
+{% else %}
+w3-blue
+{% endif %}
+"><span onclick="this.parentElement.style.display='none'"
+class="w3-button w3-right">&times;</span>
+    {{ message[1] }}
+</div>
 {% endfor %}
 
 {% block content %}{% endblock %}
