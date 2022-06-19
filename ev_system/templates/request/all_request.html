@@ -23,7 +23,7 @@
           <div>created on {{ request['created'].strftime('%d-%m-%Y') }}</div>
     </div>
 
-    <a class="w3-button w3-cell w3-cell-middle" href="{{ url_for('request.update', id=request['id']) }}">Cancel</a>
+    <a class="w3-button w3-cell w3-cell-middle w3-blue-gray w3-xxxlarge" href="{{ url_for('request.update', id=request['id']) }}">&times;</a>
 
     </div>
       </li>
