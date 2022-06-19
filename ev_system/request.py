@@ -20,7 +20,7 @@ def index():
 
     requests = db.execute(
         'SELECT r.id, start_time, end_time, created, position, requester_id, username'
-        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.station_id = s.id'
+        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
         ' WHERE requester_id == ? AND r.status == \'notify\''
         ' ORDER BY start_time ASC', [g.user['id']]
     ).fetchone()
@@ -30,7 +30,7 @@ def index():
 
     requests = db.execute(
         'SELECT r.id, start_time, end_time, created, position, requester_id, username'
-        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.station_id = s.id'
+        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
         ' WHERE requester_id == ?'
         ' ORDER BY start_time ASC', [g.user['id']]
     ).fetchall()
@@ -57,8 +57,8 @@ def schedule():
     start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%dT%H:%M')
     end_time = start_time.replace(hour=18, minute=0)
     requests = db.execute(
-        'SELECT r.id, start_time, end_time, station_id'
-        ' FROM requests r JOIN slots s on r.station_id = s.id'
+        'SELECT r.id, start_time, end_time, slot_id'
+        ' FROM requests r JOIN slots s on r.slot_id = s.id'
         ' WHERE (start_time BETWEEN ? AND ?) or (end_time BETWEEN ? AND ?) '
         ' ORDER BY start_time ASC', [start_time, end_time, start_time, end_time]
     ).fetchall()
@@ -158,10 +158,10 @@ def create():
         station_index += 1
         curr_station = int(stations[station_index])
         requests = db.execute(
-            'SELECT r.id, start_time, end_time, station_id'
-            ' FROM requests r JOIN slots s on r.station_id = s.id'
+            'SELECT r.id, start_time, end_time, slot_id'
+            ' FROM requests r JOIN slots s on r.slot_id = s.id'
             ' WHERE ((? BETWEEN start_time AND end_time) OR'
-            ' (? BETWEEN start_time AND end_time)) AND r.station_id == ?'
+            ' (? BETWEEN start_time AND end_time)) AND r.slot_id == ?'
             ' ORDER BY start_time ASC', [start_time, end_time, curr_station]
         ).fetchall()
 
@@ -173,7 +173,7 @@ def create():
     available_station = stations[station_index]
 
     db.execute(
-        'INSERT INTO requests (requester_id, start_time, end_time, station_id, duration, status)'
+        'INSERT INTO requests (requester_id, start_time, end_time, slot_id, duration, status)'
         ' VALUES (?, ?, ?, ?, ? ,?)',
         (g.user['id'], start_time, end_time, available_station, duration, 'pending')
     )
@@ -184,9 +184,14 @@ def create():
 
 def get_request(id, check_author=True):
     req = get_db().execute(
-        'SELECT p.id, station_id, start_time, created, requester_id, username'
-        ' FROM requests p JOIN user u ON p.requester_id = u.id'
-        ' WHERE p.id = ?',
+        'SELECT r.id, slot_id, start_time, created, requester_id, username, r.status AS req_status,'
+        ' st.name AS station_name, sc.code AS station_code'
+        ' FROM requests r'
+        ' LEFT JOIN user u ON r.requester_id = u.id'
+        ' LEFT JOIN slots sl ON r.slot_id = sl.id'
+        ' LEFT JOIN stations st on sl.station_id = st.id'
+        ' LEFT JOIN station_code sc on st.id = sc.station_id'
+        ' WHERE r.id = ?',
         (id,)
     ).fetchone()
 
@@ -230,8 +235,6 @@ def update(id):
     return redirect(url_for('request.index'))
 
 
-
-
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required
 def delete(id):
@@ -241,9 +244,39 @@ def delete(id):
     db.commit()
     return redirect(url_for('request.index'))
 
-@bp.route('/<int:id>/start')
+
+@bp.route('/<int:id>/start', methods=('GET', 'POST'))
 @login_required
 def start(id):
     r = get_request(id)
+    u = g.user
 
-    return render_template('request/start.html')
+    # Verify that the request started is by current user
+    if r['requester_id'] != u['id']:
+        flash("Invalid request for user", 'error')
+        return redirect(url_for('request.index'))
+
+    if r['req_status'] != 'notify':
+        flash("Request is not yet active", 'error')
+        return redirect(url_for('request.index'))
+
+    if request.method == 'POST':
+        code_json = request.get_json()
+        print("Trying to verify request {}: user code {} vs station code {}".format(r['id'], code_json['code'], r['station_code']))
+        if r['station_code'] == code_json['code']:
+            print("Codes match!")
+            return redirect(url_for('request.charging', id=id))
+        else:
+            print("Codes do not match!")
+            flash("Invalid code", 'error')
+            return redirect(url_for('request.index'))
+
+    return render_template('request/start.html', station_name=r['station_name'])
+
+
+@bp.route('/<int:id>/charging', methods=('GET', 'POST'))
+@login_required
+def charging(id):
+
+    return render_template('request/charging.html')
+

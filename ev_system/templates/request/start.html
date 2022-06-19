@@ -31,29 +31,27 @@
 {% endblock %}
 
 {% block header %}
-  <h1>{% block title %}Start Charging{% endblock %}</h1>
-  {% if g.user %}
-    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
-  {% endif %}
+  <h1 class="w3-center">{% block title %}Start Charging{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
-    Scan QR Code at station XX
 
-    <div class="w3-panel">
+    <div class="w3-container w3-center w3-large">
+        <h3>Scan QR Code at:</h3>
+        <h1>Station {{ station_name }}</h1>
 
-    <h1>QR Code Scanner</h1>
 
-    <a id="btn-scan-qr">
-        Scan
-        <!--<img src="https://uploads.sitepoint.com/wp-content/uploads/2017/07/1499401426qr_icon.svg">-->
-    </a>>
-
-    <canvas hidden="" id="qr-canvas"></canvas>
+    <canvas id="qr-canvas" hidden=""></canvas>
 
         <div id="qr-result" hidden="">
             <b>Data:</b> <span id="outputData"></span>
         </div>
+
+    <a id="btn-scan-qr" class="w3-button w3-text-green w3-hover-pale-green w3-card-2">
+        <<< Start Scan >>>
+        <!--<img src="https://uploads.sitepoint.com/wp-content/uploads/2017/07/1499401426qr_icon.svg">-->
+    </a>
+
     </div>
 
     <script  src="{{ url_for('static', filename='qr_packed.js') }}"></script>

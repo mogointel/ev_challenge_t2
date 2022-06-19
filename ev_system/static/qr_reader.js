@@ -22,6 +22,13 @@ qrcode.callback = (res) => {
     qrResult.hidden = false;
     btnScanQR.hidden = false;
     canvasElement.hidden = true;
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", window.location.href, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({
+        code: res
+    }));
   }
 };
 

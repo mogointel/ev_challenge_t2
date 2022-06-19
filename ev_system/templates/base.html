@@ -15,6 +15,7 @@
     {% block script %}{% endblock %}
 </script>
 
+<div class="w3-topbar w3-mobile">
 <div class="w3-container w3-card w3-theme w3-mobile">
     <div class="w3-cell-row">
         <div class="w3-cell" style="width: 20%">
@@ -38,6 +39,7 @@
     {% block header %}{% endblock %}
 </header>
 
+
 {% for message in get_flashed_messages(with_categories=True) %}
 <div class="w3-panel w3-theme w3-mobile
 {% if message[0] == 'error' %}
@@ -52,8 +54,11 @@ class="w3-button w3-right">&times;</span>
     {{ message[1] }}
 </div>
 {% endfor %}
+</div>
 
+<div class="w3-container">
 {% block content %}{% endblock %}
+</div>
 
 <footer class="w3-container w3-theme w3-card w3-bottom w3-mobile">
     Intel EV System v0.1

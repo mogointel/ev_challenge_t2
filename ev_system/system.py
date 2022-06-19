@@ -2,6 +2,12 @@ import datetime
 import os
 import sqlite3
 from . import server_time
+import time
+import random
+
+rand_seed = int(time.mktime(server_time.server_now().timetuple()))
+print("Using random seed {}".format(rand_seed))
+random.seed(rand_seed)
 
 
 def periodic_check(db, ):
@@ -10,8 +16,8 @@ def periodic_check(db, ):
     time = server_time.server_now()
     #
     requests = db.execute(
-        'SELECT r.id, start_time, duration, position, username, email'
-        ' FROM requests r JOIN slots s on r.station_id = s.id JOIN user u on r.requester_id = u.id'
+        'SELECT r.id, start_time, duration, position, username, email, station_id'
+        ' FROM requests r JOIN slots s on r.slot_id = s.id JOIN user u on r.requester_id = u.id'
         ' WHERE start_time <= ? AND r.status == \'pending\''
         ' ORDER BY start_time ASC', [time]
     ).fetchall()
@@ -23,6 +29,14 @@ def periodic_check(db, ):
             print ('Request {}: Notify {} ({}) to connect car to {} for {} minutes'.format(
                 req['id'], req['username'], req['email'], req['position'], req['duration']
             ))
+
+            code_num = random.randrange(100000000)
+            code = f"{code_num:08d}"
+            db.execute(
+                'UPDATE station_code'
+                ' SET code = ?'
+                ' WHERE station_id = ?', (code, req['station_id'])
+            )
 
             db.execute(
                 'UPDATE requests'
