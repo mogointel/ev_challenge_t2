@@ -5,10 +5,7 @@
 {% endblock %}
 
 {% block header %}
-  <h1>{% block title %}Upcoming Request{% endblock %}</h1>
-  {% if g.user %}
-    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
-  {% endif %}
+  <h1 class="w3-center">{% block title %}Upcoming Request{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -19,6 +16,8 @@
     <h3>By {{ requests['start_time'].strftime('%H:%M') }}</h3>
     </div>
 
-    <a class="w3-button w3-green w3-circle w3-display-middle" style="size: 100%" href="{{ url_for('request.start', id=requests['id']) }}">Start</a>
+    <div class="w3-center" style="height: 5vh;">
+    <a class="w3-button w3-green w3-circle w3-center w3-xxxlarge" style="size:100%;width: available" href="{{ url_for('request.start', id=requests['id']) }}">Start</a>
+    </div>
 
 {% endblock %}

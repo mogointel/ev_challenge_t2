@@ -1,10 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0">
+{#<meta http-equiv="refresh" content="5" >#}
+<link rel="stylesheet" href="{{ url_for('static', filename='w3.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='blue_theme.css') }}">
 
+<head>
+<div class="w3-topbar w3-mobile">
+<div class="w3-container w3-card w3-theme w3-mobile">
+    <div class="w3-cell-row">
+        <div class="w3-cell" style="width: 20%">
+        <img src="{{ url_for('static', filename='intel_logo.png') }}" class="w3-image"/></div>
+        <div class="w3-cell w3-cell-middle w3-padding"> EV System v0.1</div>
+    </div>
+</div>
+
+<div class="w3-container w3-center w3-theme-d1 w3-mobile w3-xlarge">
+STATION {{ station_name }}
+</div>
+</div>
+</head>
+
+<body>
+{% if station_code!="NO CODE" %}
+<div class="w3-panel w3-center"><img src="{{ qrcode(station_code) }}"></div>
+    <div class="w3-panel w3-blue-gray w3-center">OR SMS <span class="w3-text-light-blue">#{{ station_code }}</span> TO <span class="w3-text-light-green">*1234</span></div>
+{% else %}
+    <div class="w3-panel w3-red w3-center w3-xxxlarge">No Code</div>
+{% endif %}
 </body>
+
+<footer class="w3-container w3-theme w3-card w3-bottom w3-mobile">
+    Intel EV System v0.1
+    {% block footer %}
+    {% endblock %}
+</footer>
+
 </html>

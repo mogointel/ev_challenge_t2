@@ -75,13 +75,6 @@ def create_app(test_config=None):
 
     QRcode(app)
 
-    #scheduler = APScheduler()
-    scheduler.init_app(app)
-    #from . import system
-    scheduler.add_job(id='periodic-task', func=periodic_check, trigger='interval', seconds=10)
-    scheduler.start()
-
-
     #from . import db
     db.init_app(app)
 
@@ -91,5 +84,14 @@ def create_app(test_config=None):
     from . import request
     app.register_blueprint(request.bp)
     app.add_url_rule('/', endpoint='index')
+
+    from . import station
+    app.register_blueprint(station.bp)
+
+    # scheduler = APScheduler()
+    scheduler.init_app(app)
+    # from . import system
+    scheduler.add_job(id='periodic-task', func=periodic_check, trigger='interval', seconds=10)
+    scheduler.start()
 
     return app

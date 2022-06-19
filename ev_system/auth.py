@@ -30,7 +30,8 @@ def register():
         if error is None:
             try:
                 db.execute(
-                    "INSERT INTO user (username, password, wwid, license, car_type, monthly_credits, current_credits, email) VALUES (?, ?, ?, ?, ?, ? ,?, ?)",
+                    "INSERT INTO user (username, password, wwid, license, car_type, monthly_credits, current_credits,"
+                    " email) VALUES (?, ?, ?, ?, ?, ? ,?, ?)",
                     (username, generate_password_hash(password), wwid, license, car_type, 100, 100, email),
                 )
                 db.commit()
@@ -93,6 +94,17 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.login'))
+
+        return view(**kwargs)
+
+    return wrapped_view
+
+
+def station_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.station is None:
+            return redirect(url_for('auth.station'))
 
         return view(**kwargs)
 

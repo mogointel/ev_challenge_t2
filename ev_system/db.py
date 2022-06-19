@@ -49,6 +49,36 @@ def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
 
+    with sqlite3.connect(
+        app.config['DATABASE'],
+        detect_types=sqlite3.PARSE_DECLTYPES
+    ) as db:
+        db.row_factory = sqlite3.Row
+
+        stations = db.execute(
+            'SELECT id'
+            ' FROM stations'
+        )
+
+        for station in stations:
+            code = db.execute(
+                'SELECT *'
+                ' FROM station_code'
+                ' WHERE station_id = ?', [station['id']]
+            ).fetchone()
+            if code is None:
+                db.execute(
+                    'INSERT INTO station_code (station_id, code)'
+                    ' VALUES (?, "NO CODE")', [station['id']]
+                )
+            else:
+                db.execute(
+                    'UPDATE station_code'
+                    ' SET code = "NO CODE"'
+                    ' WHERE station_id = ?', [station['id']]
+                )
+        db.commit()
+
 
 @click.command('init-db')
 @with_appcontext
