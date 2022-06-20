@@ -235,16 +235,6 @@ def update(id):
     return redirect(url_for('request.index'))
 
 
-@bp.route('/<int:id>/delete', methods=('POST',))
-@login_required
-def delete(id):
-    get_request(id)
-    db = get_db()
-    db.execute('DELETE FROM post WHERE id = ?', (id,))
-    db.commit()
-    return redirect(url_for('request.index'))
-
-
 @bp.route('/<int:id>/start', methods=('GET', 'POST'))
 @login_required
 def start(id):
