@@ -18,10 +18,12 @@
 
     <li class="w3-card-2">
     <div class="w3-cell-row">
-        <div class="w3-cell w3-panel"><i class="fa-solid fa-calendar"></i><br/>{{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}</div>
-        <div class="w3-cell w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ request['position'] }}</div>
-        <div class="w3-cell w3-blue w3-panel"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ request['estimated_cost'] }}</div>
-        <a class="w3-cell w3-cell-middle w3-panel w3-red w3-button w3-xxxlarge" href="{{ url_for('request.update', id=request['id']) }}">&times;</a>
+        <div class="w3-cell w3-cell-middle w3-panel"><i class="fa-solid fa-calendar"></i><br/>{{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}</div>
+        <div class="w3-cell w3-cell-middle w3-light-blue w3-panel"><i class="fa-solid fa-stopwatch"></i><br/>{{ request['duration'] }}'</div>
+        <div class="w3-cell w3-cell-middle w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ request['position'] }}</div>
+        <div class="w3-cell w3-cell-middle w3-blue w3-panel"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ request['estimated_cost'] }}</div>
+        <div class="w3-cell" style="width: 8px"></div>
+        <a class="w3-cell w3-cell-middle w3-panel w3-card-2 w3-red w3-button w3-xxlarge" href="{{ url_for('request.update', id=request['id']) }}">&times;</a>
     </div>
       </li>
   {% endfor %}

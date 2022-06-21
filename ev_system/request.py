@@ -29,7 +29,7 @@ def index():
         return render_template('request/notify.html', requests=requests)
 
     requests = db.execute(
-        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost'
+        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost, duration'
         ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
         ' WHERE requester_id == ?'
         ' ORDER BY start_time ASC', [g.user['id']]
@@ -66,8 +66,13 @@ def schedule():
     station_db = db.execute(
         'SELECT id, position FROM slots s WHERE (status != \'disabled\') AND (? BETWEEN min_slot_duration and max_slot_duration)', [duration['duration']]
     ).fetchall()
-    #stations_names = [s[1] for s in station_db]
-    stations_ids = [s[0] for s in station_db]
+
+    stations = {}
+    stations_ids = []
+    for s in station_db:
+        stations[s[0]] = s[1]
+        stations_ids.append(s[0])
+
     available_slots = {}
 
     curr_time = start_time
@@ -97,7 +102,8 @@ def schedule():
                         print("No available stations for slot {}".format(curr_time))
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
-    return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost, has_budget=(est_cost <= int(g.user['current_credits'])))
+    return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost,
+                           has_budget=(est_cost <= int(g.user['current_credits'])), station_names=stations)
 
 
 @bp.route('/request', methods=('GET', 'POST'))
@@ -141,28 +147,35 @@ def request_page():
 def create():
     start_time = datetime.datetime.strptime(request.args['start_time'], '%Y-%m-%d %H:%M:%S')
     station = int(request.args['stations'])
-    duration = int(request.args['duration'])
+    duration_id = int(request.args['duration'])
     est_cost = int(request.args['cost'])
     turn_around = 30  # TODO: get from config
-    end_time = start_time + datetime.timedelta(minutes=(duration + turn_around))
+
 
     db = get_db()
+
+    duration_db = db.execute(
+        'SELECT duration'
+        ' FROM durations'
+        ' WHERE id = ?', [duration_id]
+    ).fetchone()
+    duration = int(duration_db['duration'])
 
     # Make sure that at least one of the stations does not have a conflict
     station_index = -1
     available_station = -1
 
-    requests = [1]
-    while len(requests) > 0:
-        station_index += 1
-        curr_station = int(station)
-        requests = db.execute(
-            'SELECT r.id, start_time, end_time, slot_id'
-            ' FROM requests r JOIN slots s on r.slot_id = s.id'
-            ' WHERE ((? BETWEEN start_time AND end_time) OR'
-            ' (? BETWEEN start_time AND end_time)) AND r.slot_id == ?'
-            ' ORDER BY start_time ASC', [start_time, end_time, curr_station]
-        ).fetchall()
+    end_time = start_time + datetime.timedelta(minutes=(duration + turn_around))
+
+    station_index += 1
+    curr_station = int(station)
+    requests = db.execute(
+        'SELECT r.id, start_time, end_time, slot_id'
+        ' FROM requests r JOIN slots s on r.slot_id = s.id'
+        ' WHERE ((? BETWEEN start_time AND end_time) OR'
+        ' (? BETWEEN start_time AND end_time)) AND r.slot_id == ?'
+        ' ORDER BY start_time ASC', [start_time, end_time, curr_station]
+    ).fetchall()
 
     if len(requests) > 0:
         flash("Slot {} is not available".format(curr_station), 'error')
