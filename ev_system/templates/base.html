@@ -9,25 +9,28 @@
 -->
 <link rel="stylesheet" href="{{ url_for('static', filename='w3.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='blue_theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='fa/css/all.css') }}">
 {% block meta %}{% endblock %}
 
 <script>
     {% block script %}{% endblock %}
 </script>
 
+<div class="w3-top">
 <div class="w3-topbar w3-mobile">
 <div class="w3-container w3-card w3-theme w3-mobile">
     <div class="w3-cell-row">
         <div class="w3-cell" style="width: 20%">
-        <img src="{{ url_for('static', filename='intel_logo.png') }}" class="w3-image"/></div>
+        <img src="{{ url_for('static', filename='intel_logo.png') }}" class="w3-image" style="max-height: 40px"/></div>
         <div class="w3-cell w3-cell-middle w3-padding"> EV System v0.1</div>
     </div>
+</div>
 </div>
 
 <nav class="w3-bar w3-theme-d1 w3-mobile">
     {% if g.user %}
-      <a href="{{ url_for('request.index') }}" class="w3-bar-item w3-button"> {{ g.user['username'] }} </a>
-        <div class="w3-bar-item w3-theme-l1">Credits: {{ g.user['current_credits'] }}</div>
+      <a href="{{ url_for('request.index') }}" class="w3-bar-item w3-button"><i class="fa-solid fa-home"></i> {{ g.user['username'] }} </a>
+        <div class="w3-bar-item w3-theme-l1"><i class="fa-solid fa-plug-circle-bolt"></i> {{ g.user['current_credits'] }}</div>
       <a href="{{ url_for('auth.logout') }}" class="w3-bar-item w3-button w3-right">Log Out</a>
     {% else %}
       <a href="{{ url_for('auth.register') }}" class="w3-bar-item w3-button w3-right">Register</a>
@@ -38,8 +41,9 @@
 <header class="w3-container w3-card w3-theme w3-mobile">
     {% block header %}{% endblock %}
 </header>
+</div>
 
-<div class="w3-container">
+<div class="w3-container" style="margin-top: 150px; margin-bottom: 20px">
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}

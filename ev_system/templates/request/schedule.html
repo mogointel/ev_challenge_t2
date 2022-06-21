@@ -1,31 +1,26 @@
 {% extends 'base.html' %}
 
 {% block script %}
-    function create_request(start, stations, duration)
+    function create_request(start, stations, duration, cost)
     {
-        window.open("create?start_time=" + start + "&stations=" + stations + "&duration=" + duration, "_self")
+        window.open("create?start_time=" + start + "&stations=" + stations + "&duration=" + duration + "&cost=" + cost, "_self")
     }
 {% endblock %}
 
 {% block header %}
   <h1>{% block title %}Requests{% endblock %}</h1>
-  {% if g.user %}
-    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
-  {% endif %}
 {% endblock %}
 
 {% block content %}
+    <div class="w3-center w3-xlarge">
   {% for slot, stations in slots.items() %}
-    <article class="post">
-      <header>
-        <div onclick="create_request('{{ slot }}', '{{ stations }}', '{{ duration }}')">
-          <h1>{{ slot.strftime('%d-%m-%Y %H:%M') }}</h1>
-          <div class="about">{{ stations }}</div>
-        </div>
-      </header>
-    </article>
-    {% if not loop.last %}
-      <hr>
-    {% endif %}
+      {% for station in stations %}
+      <div class="w3-card-2 w3-panel w3-cell-row w3-button" onclick="create_request('{{ slot }}', '{{ station }}', '{{ duration }}', '{{ cost }}')">
+          <div class="w3-cell w3-panel"><i class="fa-solid fa-calendar"></i><br/>{{ slot.strftime('%d-%m-%Y') }} {{ slot.strftime('%H:%M') }}</div>
+          <div class="w3-cell w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ station }}</div>
+          <div class="w3-cell w3-blue w3-panel"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ cost }}</div>
+      </div>
+          {% endfor %}
   {% endfor %}
+    </div>
 {% endblock %}
