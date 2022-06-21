@@ -5,29 +5,25 @@
 {% endblock %}
 
 {% block header %}
-  <h1>{% block title %}Requests{% endblock %}</h1>
+  <h1>Requests
   {% if g.user %}
-    <a class="action" href="{{ url_for('request.request_page') }}">New</a>
+      <a class="w3-right" href="{{ url_for('request.request_page') }}"><i class="fa-solid fa-plus-circle"></i></a>
   {% endif %}
+    </h1>
 {% endblock %}
 
 {% block content %}
-    <div class="w3-content" style="max-width: 500px">
-    <div class="w3-ul">
+    <div class="w3-ul w3-center w3-large">
   {% for request in requests %}
 
     <li class="w3-card-2">
     <div class="w3-cell-row">
-    <div  class="w3-cell">
-          <h4>{{ request['position'] }} @ {{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}</h4>
-          <div>created on {{ request['created'].strftime('%d-%m-%Y') }}</div>
-    </div>
-
-    <a class="w3-button w3-cell w3-cell-middle w3-blue-gray w3-xxxlarge" href="{{ url_for('request.update', id=request['id']) }}">&times;</a>
-
+        <div class="w3-cell w3-panel"><i class="fa-solid fa-calendar"></i><br/>{{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}</div>
+        <div class="w3-cell w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ request['position'] }}</div>
+        <div class="w3-cell w3-blue w3-panel"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ request['estimated_cost'] }}</div>
+        <a class="w3-cell w3-cell-middle w3-panel w3-red w3-button w3-xxxlarge" href="{{ url_for('request.update', id=request['id']) }}">&times;</a>
     </div>
       </li>
   {% endfor %}
-    </div>
     </div>
 {% endblock %}

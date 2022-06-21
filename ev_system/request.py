@@ -19,7 +19,7 @@ def index():
     db = get_db()
 
     requests = db.execute(
-        'SELECT r.id, start_time, end_time, created, position, requester_id, username'
+        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost'
         ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
         ' WHERE requester_id == ? AND r.status == \'notify\''
         ' ORDER BY start_time ASC', [g.user['id']]
@@ -29,7 +29,7 @@ def index():
         return render_template('request/notify.html', requests=requests)
 
     requests = db.execute(
-        'SELECT r.id, start_time, end_time, created, position, requester_id, username'
+        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost'
         ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
         ' WHERE requester_id == ?'
         ' ORDER BY start_time ASC', [g.user['id']]
@@ -97,7 +97,7 @@ def schedule():
                         print("No available stations for slot {}".format(curr_time))
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
-    return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost)
+    return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost, has_budget=(est_cost <= int(g.user['current_credits'])))
 
 
 @bp.route('/request', methods=('GET', 'POST'))
@@ -140,13 +140,11 @@ def request_page():
 @login_required
 def create():
     start_time = datetime.datetime.strptime(request.args['start_time'], '%Y-%m-%d %H:%M:%S')
-    stations = request.args['stations'].strip('][').split(', ')
+    station = int(request.args['stations'])
     duration = int(request.args['duration'])
+    est_cost = int(request.args['cost'])
     turn_around = 30  # TODO: get from config
     end_time = start_time + datetime.timedelta(minutes=(duration + turn_around))
-
-    if len(stations) == 0:
-        return redirect(url_for('request.index')) # TODO: show error
 
     db = get_db()
 
@@ -155,9 +153,9 @@ def create():
     available_station = -1
 
     requests = [1]
-    while (len(requests) > 0) and (station_index < len(stations)):
+    while len(requests) > 0:
         station_index += 1
-        curr_station = int(stations[station_index])
+        curr_station = int(station)
         requests = db.execute(
             'SELECT r.id, start_time, end_time, slot_id'
             ' FROM requests r JOIN slots s on r.slot_id = s.id'
@@ -167,18 +165,28 @@ def create():
         ).fetchall()
 
     if len(requests) > 0:
-        return redirect(url_for('request.index'))  # TODO: show error
+        flash("Slot {} is not available".format(curr_station), 'error')
+        return redirect(url_for('request.index'))
 
     # Insert the request into the requests table
 
-    available_station = stations[station_index]
+    available_station = station
 
+    # Update request
     db.execute(
-        'INSERT INTO requests (requester_id, start_time, end_time, slot_id, duration, status)'
-        ' VALUES (?, ?, ?, ?, ? ,?)',
-        (g.user['id'], start_time, end_time, available_station, duration, 'pending')
+        'INSERT INTO requests (requester_id, start_time, end_time, slot_id, duration, status, estimated_cost)'
+        ' VALUES (?, ?, ?, ?, ? ,?, ?)',
+        (g.user['id'], start_time, end_time, available_station, duration, 'pending', est_cost)
+    )
+
+    # Update user
+    db.execute(
+        'UPDATE user'
+        ' SET current_credits = ?'
+        ' WHERE id = ?', (int(g.user['current_credits'])-est_cost, g.user['id'])
     )
     db.commit()
+
     flash("Added request for {} minutes @ {} on {}".format(duration, available_station, start_time))
     return redirect(url_for('request.index'))
 
@@ -227,11 +235,27 @@ def update(id):
 
     flash("Removed request {}".format(id))
     db = get_db()
+
+    req = db.execute(
+        'SELECT estimated_cost'
+        ' FROM requests'
+        ' WHERE id = ?', [id]
+    ).fetchone()
+
+    new_credits = int(g.user['current_credits']) + int(req['estimated_cost'])
+
     db.execute(
         'DELETE FROM requests'
         ' WHERE id = ?',
         [id]
     )
+
+    db.execute(
+        'UPDATE user'
+        ' SET current_credits = ?'
+        ' WHERE id = ?', (new_credits, g.user['id'])
+    )
+
     db.commit()
     return redirect(url_for('request.index'))
 
