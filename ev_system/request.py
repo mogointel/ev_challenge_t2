@@ -51,6 +51,7 @@ def schedule():
     ).fetchone()
 
     duration = {'duration': int(duration_db['duration']), 'cost_weight': float(duration_db['cost_weight'])}
+    est_cost = int(float(duration['duration']) * duration['cost_weight'])
 
     turn_around = 30 # TODO: get from config
     #curr_time = server_time.server_now()
@@ -83,20 +84,20 @@ def schedule():
     for req in requests:
         req_start_time = req['start_time']
         req_end_time = req['end_time']
-        req_station_id = req['station_id']
+        req_slot_id = req['slot_id']
         curr_time = req_start_time
         while curr_time <= req_end_time:
             if curr_time in available_slots.keys():
                 slot_stations = available_slots[curr_time]
-                if req_station_id in slot_stations:
-                    slot_stations.remove(req_station_id)
+                if req_slot_id in slot_stations:
+                    slot_stations.remove(req_slot_id)
                     available_slots[curr_time] = slot_stations
                     if len(slot_stations) == 0:
                         available_slots.pop(curr_time)
                         print("No available stations for slot {}".format(curr_time))
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
-    return render_template('request/schedule.html', slots=available_slots, duration=duration_id)
+    return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost)
 
 
 @bp.route('/request', methods=('GET', 'POST'))
