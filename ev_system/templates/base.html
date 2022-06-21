@@ -16,7 +16,7 @@
     {% block script %}{% endblock %}
 </script>
 
-<div class="w3-top">
+<div class="w3-top" style="min-width: 470px;">
 <div class="w3-topbar w3-mobile">
 <div class="w3-container w3-card w3-theme w3-mobile">
     <div class="w3-cell-row">
@@ -43,7 +43,7 @@
 </header>
 </div>
 
-<div class="w3-container" style="margin-top: 150px; margin-bottom: 20px">
+<div class="" style="margin-top: 170px; margin-bottom: 20px; min-width: 470px;">
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -67,7 +67,11 @@ class="w3-button w3-cell w3-cell-middle w3-large w3-container">&times;</div>
 {% endif %}
 {% endwith %}
 
-{% block content %}{% endblock %}
+<div class="w3-container w3-panel">
+{% block content %}
+{% endblock %}
+</div>
+
 </div>
 
 <footer class="w3-container w3-theme w3-card w3-bottom w3-mobile">
