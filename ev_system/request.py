@@ -1,5 +1,8 @@
 import datetime
 import time
+
+import flask
+
 from . import server_time
 
 from flask import (
@@ -26,12 +29,12 @@ def index():
     ).fetchone()
 
     if requests is not None:
-        return render_template('request/notify.html', requests=requests)
+        return render_template('request/notify.html', requests=requests, server_now=server_time.server_now())
 
     requests = db.execute(
         'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost, duration'
         ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
-        ' WHERE requester_id == ?'
+        ' WHERE requester_id == ? AND r.status == \'pending\''
         ' ORDER BY start_time ASC', [g.user['id']]
     ).fetchall()
 
@@ -256,8 +259,8 @@ def create():
 
 def get_request(id, check_author=True):
     req = get_db().execute(
-        'SELECT r.id, slot_id, start_time, created, requester_id, username, r.status AS req_status,'
-        ' st.name AS station_name, sc.code AS station_code'
+        'SELECT r.id, slot_id, start_time, end_time, duration, requester_id, username, r.status AS req_status,'        
+        ' st.name AS station_name, sc.code AS station_code, slot_id, sl.station_id'
         ' FROM requests r'
         ' LEFT JOIN user u ON r.requester_id = u.id'
         ' LEFT JOIN slots sl ON r.slot_id = sl.id'
@@ -266,12 +269,6 @@ def get_request(id, check_author=True):
         ' WHERE r.id = ?',
         (id,)
     ).fetchone()
-
-    if req is None:
-        abort(404, f"Request id {id} doesn't exist.")
-
-    if check_author and req['requester_id'] != g.user['id']:
-        abort(403)
 
     return req
 
@@ -329,6 +326,11 @@ def start(id):
     r = get_request(id)
     u = g.user
 
+    if r is None:
+        print("Failed to load start for request id {}".format(id))
+        flash("Could not find request {}".format(id), 'error')
+        return redirect(url_for('request.index'))
+
     # Verify that the request started is by current user
     if r['requester_id'] != u['id']:
         flash("Invalid request for user", 'error')
@@ -341,20 +343,131 @@ def start(id):
     if request.method == 'POST':
         code_json = request.get_json()
         print("Trying to verify request {}: user code {} vs station code {}".format(r['id'], code_json['code'], r['station_code']))
-        if r['station_code'] == code_json['code']:
+        if True: #r['station_code'] == code_json['code']:
+            db = get_db()
             print("Codes match!")
-            return redirect(url_for('request.charging', id=id))
+            # TODO: handle request start DB
+            # Update request status
+            # Move request from pending to active requests table
+            #
+            db.execute(
+                'UPDATE requests'
+                ' SET status = ?'
+                ' WHERE id = ?', ['charging', id]
+            )
+
+            db.execute(
+                'UPDATE slots'
+                ' SET status = ?'
+                ' WHERE id = ?', ['occupied', r['slot_id']]
+            )
+
+            db.execute(
+                'UPDATE stations'
+                ' SET status = ?'
+                ' WHERE id = ?', ['charging', r['station_id']]
+            )
+
+            db.commit()
+
+            return url_for('request.charging', id=id)
         else:
             print("Codes do not match!")
             flash("Invalid code", 'error')
-            return redirect(url_for('request.index'))
 
     return render_template('request/start.html', station_name=r['station_name'])
 
 
-@bp.route('/<int:id>/charging', methods=('GET', 'POST'))
+@bp.route('/<int:id>/charging', methods=('GET',))
 @login_required
 def charging(id):
+    r = get_request(id)
+    u = g.user
 
-    return render_template('request/charging.html')
+    if r is None:
+        print("Failed to load charging for request id {}".format(id))
+        flash("Could not find request {}".format(id), 'error')
+        return redirect(url_for('request.index'))
+
+    if r['req_status'] != 'charging':
+        flash("Request is not charging", 'error')
+        return redirect(url_for('request.index'))
+
+    start_time = r['start_time']
+    duration = int(r['duration'])
+    charge_end = start_time + datetime.timedelta(minutes=duration)
+
+    return render_template('request/charging.html', requests=r, charge_end=charge_end, server_now=server_time.server_now())
+
+
+@bp.route('/<int:id>/stop', methods=('GET', 'POST'))
+@login_required
+def stop(id):
+    r = get_request(id)
+    u = g.user
+
+    if r is None:
+        print("Failed to load stop for request id {}".format(id))
+        flash("Could not find request {}".format(id), 'error')
+        return redirect(url_for('request.index'))
+
+    # Verify that the request started is by current user
+    if r['requester_id'] != u['id']:
+        flash("Invalid request for user", 'error')
+        return redirect(url_for('request.index'))
+
+    if r['req_status'] != 'charging':
+        flash("Request is not charging", 'error')
+        return redirect(url_for('request.index'))
+
+    if request.method == 'POST':
+        code_json = request.get_json()
+        print("Trying to verify request stop {}: user code {} vs station code {}".format(r['id'], code_json['code'], r['station_code']))
+        if True: #r['station_code'] == code_json['code']:
+            print("Codes match!")
+            # TODO: handle request start DB
+            # Update request status
+            # Move request from active to finished
+            # Update actual end time
+            # Calculate power consumption
+            # Calculate final credits (add penalty)
+
+            actual_end = server_time.server_now()
+            total_duration_td = actual_end - r['start_time']
+            total_duration = int(total_duration_td.total_seconds() / 60)
+            if actual_end > r['end_time']:
+                minutes_late_td = actual_end - r['end_time']
+                minutes_late = int(minutes_late_td.total_seconds() / 60)
+                print("Request {} was {} minutes late".format(id, minutes_late))
+
+            db = get_db()
+
+            db.execute(
+                'UPDATE requests'
+                ' SET status = ?'
+                ' WHERE id = ?', ['finished', id]
+            )
+
+            db.execute(
+                'UPDATE slots'
+                ' SET status = ?'
+                ' WHERE id = ?', ['free', r['slot_id']]
+            )
+
+            db.execute(
+                'UPDATE stations'
+                ' SET status = ?'
+                ' WHERE id = ?', ['idle', r['station_id']]
+            )
+
+            db.commit()
+            end_msg = "Finished charging\nat {}\nfor {} minutes".format(r['station_name'], total_duration)
+            flash(end_msg)
+
+            return url_for('request.index')
+        else:
+            print("Codes do not match!")
+            flash("Invalid code", 'error')
+
+    return render_template('request/stop.html', station_name=r['station_name'])
 
