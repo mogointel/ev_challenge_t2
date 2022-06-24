@@ -38,10 +38,55 @@ def index():
     return render_template('request/all_request.html', requests=requests)
 
 
+def compute_cost(cost_id, curr_cost):
+    cost = curr_cost
+
+    if cost_id is not None:
+        db = get_db()
+        cost_db = db.execute(
+            'SELECT type, value'
+            ' FROM extra_cost'
+            ' WHERE id = ?', [cost_id]
+        ).fetchone()
+
+        if cost_db['type'] == 'percent':
+            cost += int(float(curr_cost) * (float(cost_db['value'])/100.0))
+        elif cost_db['type'] == 'fixed':
+            cost += int(cost_db['value'])
+
+    return cost
+
+
+def compute_extra_cost(station_db, est_cost):
+    station_cost_id = station_db['station_cost']
+    slot_cost_id = station_db['slot_cost']
+
+    cost = est_cost
+
+    cost = compute_cost(station_cost_id, cost)
+    cost = compute_cost(slot_cost_id, cost)
+
+    return cost
+
+
+@bp.context_processor
+def comp_cost():
+    def _comp_cost(station_db, est_cost):
+        return compute_extra_cost(station_db, est_cost)
+    return dict(comp_cost=_comp_cost)
+
+
+@bp.context_processor
+def has_budget():
+    def _has_budget(cost):
+        has = int(g.user['current_credits']) >= cost
+        return has
+    return dict(has_budget=_has_budget)
+
+
 @bp.route('/schedule')
 @login_required
 def schedule():
-    db = get_db()
     duration_id = int(request.args.get('req_duration', None))
     db = get_db()
     duration_db = db.execute(
@@ -64,13 +109,18 @@ def schedule():
         ' ORDER BY start_time ASC', [start_time, end_time, start_time, end_time]
     ).fetchall()
     station_db = db.execute(
-        'SELECT id, position FROM slots s WHERE (status != \'disabled\') AND (? BETWEEN min_slot_duration and max_slot_duration)', [duration['duration']]
+        'SELECT sl.id, sl.position as name, sl.extra_cost_id as slot_cost, st.extra_cost_id as station_cost'
+        ' FROM slots sl JOIN stations st on sl.station_id = st.id'
+        ' WHERE (st.status != \'disabled\') AND (sl.status != \'disabled\')'
+        '       AND (? BETWEEN min_slot_duration and max_slot_duration)',
+        [duration['duration']]
     ).fetchall()
 
     stations = {}
+    stations_db = {}
     stations_ids = []
     for s in station_db:
-        stations[s[0]] = s[1]
+        stations[s[0]] = s
         stations_ids.append(s[0])
 
     available_slots = {}
@@ -103,7 +153,7 @@ def schedule():
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
     return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost,
-                           has_budget=(est_cost <= int(g.user['current_credits'])), station_names=stations)
+                           curr_budget=int(g.user['current_credits']), station_data=stations)
 
 
 @bp.route('/request', methods=('GET', 'POST'))
