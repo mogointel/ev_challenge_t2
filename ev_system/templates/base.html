@@ -12,7 +12,51 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='fa/css/all.css') }}">
 {% block meta %}{% endblock %}
 
+<!-- Make sure screen is locked at portrait mode -->
+<style>
+    @media screen and (min-width: 320px) and (max-width: 767px) and (orientation: landscape) {
+  html {
+    transform: rotate(-90deg);
+    transform-origin: left top;
+    width: 100vh;
+    overflow-x: hidden;
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
+}
+</style>
+
 <script>
+    function start_timer(countDownDateStr, nowDateStr) {
+        // Get today's date and time
+        let countDownDate = new Date(countDownDateStr).getTime()
+        let now = new Date(nowDateStr).getTime();
+
+        // Find the distance between now and the count down date
+        let distance = countDownDate - now;
+
+        let curr_interval = setInterval(function() {
+            distance -= 1000;
+
+            // Time calculations for days, hours, minutes and seconds
+            let hours = Math.floor(distance / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Display the result in the element with id="demo"
+            document.getElementById("timer_output").innerHTML = hours + "h "
+            + minutes + "m " + seconds + "s ";
+
+            // If the count down is finished, write some text
+            if (distance < 0) {
+                clearInterval(curr_interval);
+                document.getElementById("timer_output").innerHTML = "EXPIRED";
+                }
+            }, 1000
+        )
+    }
+
     {% block script %}{% endblock %}
 </script>
 
@@ -43,7 +87,7 @@
 </header>
 </div>
 
-<div class="" style="margin-top: 170px; margin-bottom: 20px; min-width: 470px;">
+<div class="" style="margin-top: 180px; margin-bottom: 20px; min-width: 470px;">
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
@@ -58,7 +102,9 @@ w3-yellow
 w3-blue
 {% endif %}
 " style="width: 60%; margin-left: 16px">
-<div class="w3-cell-middle w3-cell w3-container">{{ category }} : {{ message }}</div>
+    <div class="w3-cell-middle w3-cell w3-container w3-center"><h1>{{ category }}</h1>
+        {{ message }}
+    </div>
     <div onclick="this.parentElement.style.display='none'"
 class="w3-button w3-cell w3-cell-middle w3-large w3-container">&times;</div>
 </div>
