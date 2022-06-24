@@ -38,6 +38,8 @@ def index():
         ' ORDER BY start_time ASC', [g.user['id']]
     ).fetchall()
 
+    flash("Test Message")
+
     return render_template('request/all_request.html', requests=requests)
 
 

@@ -91,24 +91,31 @@
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-    <div style="z-index: 5; position: fixed; opacity: 85%">
-{% for category, message in messages %}
-<div class="w3-cell-row w3-round-medium w3-panel
-{% if category == 'error' %}
-w3-red
-{% elif category == 'warning' %}
-w3-yellow
-{% else %}
-w3-blue
-{% endif %}
-" style="width: 60%; margin-left: 16px">
-    <div class="w3-cell-middle w3-cell w3-container w3-center"><h1>{{ category }}</h1>
-        {{ message }}
-    </div>
-    <div onclick="this.parentElement.style.display='none'"
-class="w3-button w3-cell w3-cell-middle w3-large w3-container">&times;</div>
-</div>
+    {% set msg_id = 0 %}
+    <div style="z-index: 5; position: fixed; opacity: 95%; left: 25%; top:30% ">
+        <div id="flash_modal" class="w3-container w3-modal w3-animate-opacity" style="display: block; padding: 50px">
+            <div class="w3-modal-content">
+                {% for category, message in messages %}
+                <div class="w3-round-medium w3-panel
+                {% if category == 'error' %}
+                w3-red
+                {% elif category == 'warning' %}
+                w3-yellow
+                {% else %}
+                w3-blue
+                {% endif %}
+                " style="">
+                    <div class="w3-container w3-center w3-large w3-margin-bottom">
+                        <h2><b>{{ category.upper() }}</b></h2>
+                        {{ message }}
+                    </div>
+                </div>
+    {% set msg_id = msg_id + 1 %}
 {% endfor %}
+                <div onclick="document.getElementById('flash_modal').style.display='none'"
+                    class="w3-button w3-input w3-card-2 w3-large w3-margin-bottom">OK</div>
+            </div>
+        </div>
     </div>
 {% endif %}
 {% endwith %}

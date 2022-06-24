@@ -4,6 +4,10 @@
 <!--<meta http-equiv="refresh" content="20" >-->
 {% endblock %}
 
+{% block script %}
+
+{% endblock %}
+
 {% block header %}
   <h1>Requests
   {% if g.user %}
@@ -13,6 +17,36 @@
 {% endblock %}
 
 {% block content %}
+    <script>
+    function show_confirm(date_str, url_str) {
+        let confirm_modal = document.getElementById("confirm_modal");
+        let confirm_div = document.getElementById("confirm_div");
+        let confirm_yes = document.getElementById("confirm_yes");
+        let confirm_no = document.getElementById("confirm_no");
+
+        confirm_div.innerHTML = "Remove request for " + date_str + "?";
+        confirm_yes.onclick = function () {
+            confirm_modal.style.display = "none";
+            window.location.href = url_str;
+        }
+        confirm_no.onclick = function () {
+            confirm_modal.style.display = "none";
+        }
+
+        confirm_modal.style.display = "block";
+    }
+    </script>
+
+    <div id="confirm_modal" class="w3-modal w3-animate-opacity">
+    <div class="w3-modal-content">
+        <div id="confirm_div" class="w3-panel w3-pale-yellow">
+        </div>
+        <div class="w3-panel">
+        <a id="confirm_yes" class="w3-button">YES</a>
+        <a id="confirm_no" class="w3-button">NO</a>
+            </div>
+    </div>
+    </div>
     <div class="w3-ul w3-center w3-large">
   {% for request in requests %}
 
@@ -23,7 +57,7 @@
         <div class="w3-cell w3-cell-middle w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ request['position'] }}</div>
         <div class="w3-cell w3-cell-middle w3-blue w3-panel"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ request['estimated_cost'] }}</div>
         <div class="w3-cell" style="width: 8px"></div>
-        <a class="w3-cell w3-cell-middle w3-panel w3-card-2 w3-red w3-button w3-xxlarge" href="{{ url_for('request.update', id=request['id']) }}">&times;</a>
+        <a class="w3-cell w3-cell-middle w3-panel w3-card-2 w3-red w3-button w3-xxlarge" onclick="show_confirm('{{ request['start_time'].strftime('%d-%m-%Y %H:%M') }}','{{ url_for('request.update', id=request['id']) }}')">&times;</a>
     </div>
       </li>
   {% endfor %}
