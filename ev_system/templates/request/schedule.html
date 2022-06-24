@@ -3,7 +3,7 @@
 {% block script %}
     function create_request(start, stations, duration, cost)
     {
-        window.open("create?start_time=" + start + "&stations=" + stations + "&duration=" + duration + "&cost=" + cost, "_self")
+        window.open("create?start_time=" + start + "&stations=" + stations + "&duration=" + duration + "&cost=" +  cost, "_self")
     }
 {% endblock %}
 
@@ -21,19 +21,21 @@
   {% for slot, stations in slots.items() %}
       {% for station in stations %}
       <div class="w3-panel w3-cell-row
-           {% if has_budget %}
-           w3-card-2 w3-button" onclick="create_request('{{ slot }}', '{{ station }}', '{{ duration }}', '{{ cost }}')"
+      {% set curr_cost = comp_cost(station_data[station],cost) %}
+      {% set my_budget = has_budget(curr_cost) %}
+           {% if my_budget==true %}
+           w3-card-2 w3-button" onclick="create_request('{{ slot }}', '{{ station }}', '{{ duration }}', '{{ curr_cost }}')"
            {% else %}
             w3-card w3-light-gray"
               {% endif %}
       >
           <div class="w3-cell w3-cell-middle w3-panel"><i class="fa-solid fa-calendar"></i><br/>{{ slot.strftime('%d-%m-%Y') }} {{ slot.strftime('%H:%M') }}</div>
-          <div class="w3-cell w3-cell-middle w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ station_names[station] }}</div>
+          <div class="w3-cell w3-cell-middle w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ station_data[station]['name'] }}</div>
           <div class="w3-cell w3-cell-middle w3-blue w3-panel
-{% if has_budget==false %}
+{% if my_budget==false %}
 w3-text-red
 {% endif %}
-"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ cost }}</div>
+"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ curr_cost }}</div>
       </div>
           {% endfor %}
   {% endfor %}
