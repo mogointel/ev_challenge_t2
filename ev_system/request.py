@@ -260,7 +260,7 @@ def create():
 def get_request(id, check_author=True):
     req = get_db().execute(
         'SELECT r.id, slot_id, start_time, end_time, duration, requester_id, username, r.status AS req_status,'        
-        ' st.name AS station_name, sc.code AS station_code, slot_id, sl.station_id'
+        ' st.name AS station_name, sc.code AS station_code, slot_id, sl.station_id, estimated_cost'
         ' FROM requests r'
         ' LEFT JOIN user u ON r.requester_id = u.id'
         ' LEFT JOIN slots sl ON r.slot_id = sl.id'
@@ -432,15 +432,28 @@ def stop(id):
             # Calculate power consumption
             # Calculate final credits (add penalty)
 
+            final_cost = r['estimated_cost']
+            penalty = 0
+
             actual_end = server_time.server_now()
             total_duration_td = actual_end - r['start_time']
             total_duration = int(total_duration_td.total_seconds() / 60)
             if actual_end > r['end_time']:
                 minutes_late_td = actual_end - r['end_time']
                 minutes_late = int(minutes_late_td.total_seconds() / 60)
+                penalty = int(minutes_late / 10)
                 print("Request {} was {} minutes late".format(id, minutes_late))
 
+            final_cost += penalty
+
             db = get_db()
+
+            station = db.execute(
+                'SELECT power_per_hour'
+                ' FROM stations'
+                ' WHERE id = ?', [r['station_id']]
+            ).fetchone()
+            power_est = round(station['power_per_hour'] * (total_duration / 60), 0)
 
             db.execute(
                 'UPDATE requests'
@@ -458,6 +471,13 @@ def stop(id):
                 'UPDATE stations'
                 ' SET status = ?'
                 ' WHERE id = ?', ['idle', r['station_id']]
+            )
+
+            # Place request in finished_requests table
+            db.execute(
+                'INSERT INTO finished_requests (request_id, start_time, power_est, station_id, user_name, actual_cost)'
+                ' VALUES (?, ?, ?, ?, ?, ?)',
+                (id, r['start_time'], power_est, r['station_id'], r['username'], final_cost)
             )
 
             db.commit()
