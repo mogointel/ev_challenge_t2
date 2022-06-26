@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block meta %}
-<meta http-equiv="refresh" content="20" >
+<!--<meta http-equiv="refresh" content="20" >-->
 {% endblock %}
 
 {% block script %}
@@ -9,15 +9,14 @@
 {% endblock %}
 
 {% block header %}
-  <h1 class="w3-center">{% block title %}Charging{% endblock %}</h1>
+  <h1 class="w3-center">{% block title %}Charging Complete{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
-    <div class="w3-content w3-card-4 w3-pale-green w3-center" style="height: 300px">
-    <h2>Charging at</h2>
+    <div class="w3-content w3-card-4 w3-pale-red w3-center" style="height: 300px">
+    <h2>Please move you car from:</h2>
     <h1>{{ requests['station_name'] }}</h1>
-    <h3>Until {{ charge_end.strftime('%H:%M') }}<p id="timer_output"></p></h3>
-
+    <h3>By {{ charge_end.strftime('%H:%M') }}<p id="timer_output"></p></h3>
     </div>
 
     <div class="w3-center" style="height: 5vh;">

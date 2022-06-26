@@ -22,7 +22,7 @@ def index():
     db = get_db()
 
     requests = db.execute(
-        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost'
+        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost, s.status as slot_status'
         ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
         ' WHERE requester_id == ? AND r.status == \'notify\''
         ' ORDER BY start_time ASC', [g.user['id']]
@@ -32,13 +32,11 @@ def index():
         return render_template('request/notify.html', requests=requests, server_now=server_time.server_now())
 
     requests = db.execute(
-        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost, duration'
-        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id'
+        'SELECT r.id, start_time, end_time, created, position, requester_id, username, estimated_cost, duration, b.name as building'
+        ' FROM requests r join user u on r.requester_id = u.id join slots s on r.slot_id = s.id join building b on s.building_id = b.id'
         ' WHERE requester_id == ? AND r.status == \'pending\''
         ' ORDER BY start_time ASC', [g.user['id']]
     ).fetchall()
-
-    flash("Test Message")
 
     return render_template('request/all_request.html', requests=requests)
 
@@ -100,12 +98,30 @@ def schedule():
         ' WHERE id = ?', [duration_id]
     ).fetchone()
 
+    if duration_db is None:
+        flash("Unsupported duration", "error")
+        return redirect(url_for('request.request'))
+
     duration = {'duration': int(duration_db['duration']), 'cost_weight': float(duration_db['cost_weight'])}
     est_cost = int(float(duration['duration']) * duration['cost_weight'])
 
     turn_around = 30 # TODO: get from config
-    #curr_time = server_time.server_now()
-    start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%dT%H:%M')
+    time_offset = request.args.get('offset', None)
+
+    if time_offset is not None:
+        time_offset = int(time_offset)
+        start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%d %H:%M:%S')
+        start_time = start_time.replace(hour=8, minute=0) + datetime.timedelta(days=time_offset)
+    else:
+        start_time = datetime.datetime.strptime(request.args.get('req_start', None), '%Y-%m-%dT%H:%M')
+
+    curr_time = server_time.server_now()
+
+    if start_time < curr_time:
+        start_time = curr_time
+    if start_time > (curr_time + datetime.timedelta(days=7)):
+        start_time = (curr_time + datetime.timedelta(days=7))
+
     end_time = start_time.replace(hour=18, minute=0)
     requests = db.execute(
         'SELECT r.id, start_time, end_time, slot_id'
@@ -113,11 +129,22 @@ def schedule():
         ' WHERE (start_time BETWEEN ? AND ?) or (end_time BETWEEN ? AND ?) '
         ' ORDER BY start_time ASC', [start_time, end_time, start_time, end_time]
     ).fetchall()
+
+    site_id = int(request.args.get('site_id', -1))
+    bldg_query = ""
+    if site_id >= 0:
+        bldg_name = request.args.get('bldg_name', None)
+        if bldg_name != "-1":
+            bldg_query = " AND b.name = '" + bldg_name + "'"
+        else:
+            bldg_query = " AND b.site_id = " + str(site_id)
+
     station_db = db.execute(
-        'SELECT sl.id, sl.position as name, sl.extra_cost_id as slot_cost, st.extra_cost_id as station_cost'
-        ' FROM slots sl JOIN stations st on sl.station_id = st.id'
+        'SELECT sl.id, sl.position as name, sl.extra_cost_id as slot_cost, st.extra_cost_id as station_cost,'
+        ' b.name as building'
+        ' FROM slots sl JOIN stations st on sl.station_id = st.id JOIN building b on sl.building_id = b.id'
         ' WHERE (st.status != \'disabled\') AND (sl.status != \'disabled\')'
-        '       AND (? BETWEEN min_slot_duration and max_slot_duration)',
+        '       AND (? BETWEEN min_slot_duration and max_slot_duration)' + bldg_query,
         [duration['duration']]
     ).fetchall()
 
@@ -158,7 +185,7 @@ def schedule():
             curr_time = curr_time + datetime.timedelta(minutes=duration['duration'])
 
     return render_template('request/schedule.html', slots=available_slots, duration=duration_id, cost=est_cost,
-                           curr_budget=int(g.user['current_credits']), station_data=stations)
+                           curr_budget=int(g.user['current_credits']), station_data=stations, day=start_time)
 
 
 @bp.route('/request', methods=('GET', 'POST'))
@@ -167,6 +194,8 @@ def request_page():
     if request.method == 'POST':
         duration = request.form['duration']
         start_date = request.form['start_date']
+        bldg = request.form['bldg']
+        site = request.form['site']
         error = None
 
         if not start_date:
@@ -175,7 +204,7 @@ def request_page():
         if error is not None:
             flash(error, 'error')
         else:
-            return redirect(url_for('request.schedule', req_duration=duration, req_start=start_date))
+            return redirect(url_for('request.schedule', req_duration=duration, req_start=start_date, bldg_name=bldg, site_id=site))
 
     db = get_db()
     durations_db = db.execute(
@@ -194,7 +223,32 @@ def request_page():
         has_credit = cost <= user_credits
         durations[d['id']] = {'name': d['name'], 'duration': dur, 'cost': cost, 'id': d['id'], 'has_credit': has_credit}
 
-    return render_template('request/request.html', durations=durations_db)
+    sites_db = db.execute(
+        'SELECT *'
+        ' FROM site'
+        ' ORDER BY name ASC'
+    ).fetchall()
+
+    bldgs_db = db.execute(
+        'SELECT *'
+        ' FROM building'
+        ' ORDER BY name ASC'
+    ).fetchall()
+
+    bldgs = {}
+    curr_bldgs = []
+    for bldg in bldgs_db:
+        curr_bldgs.append(bldg['name'])
+    bldgs[-1] = curr_bldgs
+
+    for site in sites_db:
+        curr_bldgs = []
+        for bldg in bldgs_db:
+            if bldg['site_id'] == site['id']:
+                curr_bldgs.append(bldg['name'])
+        bldgs[site['id']] = curr_bldgs
+
+    return render_template('request/request.html', durations=durations_db, sites=sites_db, buildings=bldgs)
 
 
 @bp.route('/create', methods=('GET', 'POST'))
@@ -399,7 +453,46 @@ def charging(id):
     duration = int(r['duration'])
     charge_end = start_time + datetime.timedelta(minutes=duration)
 
+    if charge_end <= server_time.server_now():
+        db = get_db()
+
+        db.execute(
+            'UPDATE requests'
+            ' SET status = ?'
+            ' WHERE id = ?', ['evacuate', r['id']]
+        )
+
+        db.commit()
+
+        return redirect(url_for('request.notify_end'))
+
     return render_template('request/charging.html', requests=r, charge_end=charge_end, server_now=server_time.server_now())
+
+
+@bp.route('/<int:id>/notify_end', methods=('GET',))
+@login_required
+def notify_end(id):
+    r = get_request(id)
+    u = g.user
+
+    if r is None:
+        print("Failed to load charging for request id {}".format(id))
+        flash("Could not find request {}".format(id), 'error')
+        return redirect(url_for('request.index'))
+
+    if r['req_status'] != 'evacuate':
+        flash("Charging still active", 'error')
+        return redirect(url_for('request.charging'))
+
+    end_time = r['end_time']
+    duration = 30
+    charge_end = end_time + datetime.timedelta(minutes=duration)
+
+    # if charge_end >= server_time.server_now():
+    #     return redirect(url_for('request.notify_end'))
+
+    return render_template('request/notify_end.html', requests=r, charge_end=charge_end,
+                           server_now=server_time.server_now())
 
 
 @bp.route('/<int:id>/stop', methods=('GET', 'POST'))

@@ -17,6 +17,11 @@
 
 
 {% block content %}
+    <div class="w3-bar w3-border">
+        <a href="{{ url_for('request.schedule', req_start=day, offset=-1, req_duration=duration) }}" class="w3-button w3-bar-item w3-border-right">&#10094;</a>
+        <div class="w3-bar-item w3-half"> <div class="" style="font-weight: bold"><i class="fa-solid fa-calendar"></i> {{ day.strftime('%d-%m-%Y') }}</div></div>
+        <a href="{{ url_for('request.schedule', req_start=day, offset=1, req_duration=duration) }}" class="w3-button w3-bar-item w3-border-left w3-right">&#10095;</a>
+    </div>
     <div class="w3-center w3-xlarge">
   {% for slot, stations in slots.items() %}
       {% for station in stations %}
@@ -29,13 +34,14 @@
             w3-card w3-light-gray"
               {% endif %}
       >
-          <div class="w3-cell w3-cell-middle w3-panel"><i class="fa-solid fa-calendar"></i><br/>{{ slot.strftime('%d-%m-%Y') }} {{ slot.strftime('%H:%M') }}</div>
-          <div class="w3-cell w3-cell-middle w3-blue-gray w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ station_data[station]['name'] }}</div>
-          <div class="w3-cell w3-cell-middle w3-blue w3-panel
+          <div class="w3-cell w3-cell-middle w3-theme-l2 w3-panel"><i class="fa-solid fa-clock"></i><br/>{{ slot.strftime('%H:%M') }}</div>
+          <div class="w3-cell w3-cell-middle w3-theme-l1 w3-panel"><i class="fa-solid fa-building"></i><br/>{{ station_data[station]['building'] }}</div>
+          <div class="w3-cell w3-cell-middle w3-theme-d1 w3-panel"><i class="fa-solid fa-square-parking"></i><br/>{{ station_data[station]['name'] }}</div>
+          <div class="w3-cell w3-theme-d2 w3-cell-middle w3-panel
 {% if my_budget==false %}
 w3-text-red
 {% endif %}
-"><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ curr_cost }}</div>
+  "><i class="fa-solid fa-plug-circle-bolt"></i><br/>{{ curr_cost }}</div>
       </div>
           {% endfor %}
   {% endfor %}

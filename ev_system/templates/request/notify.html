@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block meta %}
-<!--<meta http-equiv="refresh" content="20" >-->
+<meta http-equiv="refresh" content="20" >
 {% endblock %}
 
 {% block script %}
@@ -13,11 +13,15 @@
 {% endblock %}
 
 {% block content %}
+{% if requests['slot_status'] == 'free' %}
     <div class="w3-content w3-card-4 w3-pale-green w3-center" style="height: 300px">
     <h2>Please move your<br/>car to:</h2>
     <h1>{{ requests['position'] }}</h1>
     <h3>By {{ requests['start_time'].strftime('%H:%M') }}<p id="timer_output"></p></h3>
-
+    {% else %}
+    <div class="w3-content w3-card-4 w3-pale-yellow w3-center" style="height: 300px">
+    <h1>Waiting for previous car to evacuate space</h1>
+    {% endif %}
     </div>
 
     <div class="w3-center" style="height: 5vh;">

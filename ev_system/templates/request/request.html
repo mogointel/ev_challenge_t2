@@ -5,7 +5,48 @@
 {% endblock %}
 
 {% block content %}
+    <script>
+    let my_bldgs = {{ buildings|tojson|safe }};
+
+    function createOption(ddl, text, value) {
+        let opt = document.createElement('option');
+        opt.value = value;
+        opt.text = text;
+        ddl.options.add(opt);
+    }
+
+    function createOptions(optionsArray, ddl) {
+        for (let i = 0; i < optionsArray.length; i++) {
+            createOption(ddl, optionsArray[i], optionsArray[i]);
+        }
+    }
+
+    function fill_buildings(site_select) {
+        let bldg_select = document.getElementById('bldg');
+        bldg_select.options.length = 0;
+        createOption(bldg_select, "Any", "-1");
+        let bldg_vals = my_bldgs[site_select.value];
+        createOptions(bldg_vals, bldg_select);
+    }
+
+    </script>
   <form method="post" class="w3-card-4">
+    <label for="site">Site</label>
+    <select class="w3-input" name="site" id="site" onchange="fill_buildings(this)">
+        <option selected="selected" value="-1">Any</option>
+        {% for site in sites %}
+        <option value="{{ site['id'] }}">{{ site['name'] }}</option>
+        {% endfor %}
+    </select>
+  <label for="bldg">Building</label>
+  <select class="w3-input" name="bldg" id="bldg">
+        <option selected="selected" value="-1">Any</option>
+        {% for site in buildings %}
+            {% for bldg in buildings[site] %}
+                <option value="{{ bldg }}">{{ bldg }}</option>
+            {% endfor %}
+        {% endfor %}
+    </select>
     <label for="duration">Duration</label>
     <select class="w3-input" name="duration" id="duration">
         {% for duration in durations %}

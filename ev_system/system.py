@@ -14,12 +14,14 @@ def periodic_check(db, ):
 
     # time = datetime.datetime.now()
     time = server_time.server_now()
+
+    next_car_time = time + datetime.timedelta(minutes=30)
     #
     requests = db.execute(
         'SELECT r.id, start_time, duration, position, username, email, station_id'
         ' FROM requests r JOIN slots s on r.slot_id = s.id JOIN user u on r.requester_id = u.id'
         ' WHERE start_time <= ? AND r.status == \'pending\''
-        ' ORDER BY start_time ASC', [time]
+        ' ORDER BY start_time ASC', [next_car_time]
     ).fetchall()
 
     print('periodic check: ' + str(time))

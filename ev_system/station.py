@@ -11,7 +11,7 @@ bp = Blueprint('station', __name__)
 
 def get_station(id):
     s = get_db().execute(
-        'SELECT name, code'
+        'SELECT name, code, status'
         ' FROM stations s LEFT JOIN station_code sc ON s.id = sc.station_id'
         ' WHERE s.id = ?',
         (id,)
@@ -33,7 +33,9 @@ def station(id):
 
     name = s['name']
 
-    return render_template('station/index.html', station_name=name, station_code=code)
+    status = s['status']
+
+    return render_template('station/index.html', station_name=name, station_code=code, station_status=status)
 
 
 
