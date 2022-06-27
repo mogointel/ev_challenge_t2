@@ -399,7 +399,13 @@ def verify():
     if code_db is not None:
         if code_db['code'] != code:
             flash("Invalid code", 'error')
-            return redirect(request.url)
+            if req is not None:
+                status = req['status']
+                if status == "notify":
+                    return redirect(url_for('request.start'))
+                elif status == "evacuate":
+                    return redirect(url_for('request.stop'))
+            return redirect(url_for('request.index'))
 
     if req is not None:
         status = req['status']
