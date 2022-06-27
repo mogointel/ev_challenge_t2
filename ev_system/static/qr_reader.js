@@ -44,22 +44,26 @@ function stop_scan() {
 
 function start_scan() {
     scan_count = 50;
-    let camera = navigator.mediaDevices
-    .getUserMedia({ video: { facingMode: "environment" } });
+    try {
+        let camera = navigator.mediaDevices
+            .getUserMedia({video: {facingMode: "environment"}});
 
-    if (camera != null) {
-        camera.then(function (stream) {
-            scanning = true;
-            qrResult.hidden = true;
-            canvasElement.hidden = false;
-            video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
-            video.srcObject = stream;
-            video.play();
-            tick();
-            scan();
-        });
-    } else {
-        canvasElement.parentElement.innerText = "Please use external QR scanner";
+        if (camera != null) {
+            camera.then(function (stream) {
+                scanning = true;
+                qrResult.hidden = true;
+                canvasElement.hidden = false;
+                video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+                video.srcObject = stream;
+                video.play();
+                tick();
+                scan();
+            });
+        } else {
+            canvasElement.parentElement.innerText = "Please use external QR scanner";
+        }
+    } catch(err) {
+         canvasElement.parentElement.innerText = "Please use external QR scanner";
     }
 }
 
