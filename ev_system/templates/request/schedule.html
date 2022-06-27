@@ -19,7 +19,7 @@
 {% block content %}
     <div class="w3-bar w3-border">
         <a href="{{ url_for('request.schedule', req_start=day, offset=-1, req_duration=duration) }}" class="w3-button w3-bar-item w3-border-right">&#10094;</a>
-        <div class="w3-bar-item w3-half"> <div class="" style="font-weight: bold"><i class="fa-solid fa-calendar"></i> {{ day.strftime('%d-%m-%Y') }}</div></div>
+        <div class="w3-bar-item"> <div class="w3-large" style="font-weight: bold"><i class="fa-solid fa-calendar"></i> {{ day.strftime('%d-%m-%Y') }}</div></div>
         <a href="{{ url_for('request.schedule', req_start=day, offset=1, req_duration=duration) }}" class="w3-button w3-bar-item w3-border-left w3-right">&#10095;</a>
     </div>
     <div class="w3-center w3-xlarge">

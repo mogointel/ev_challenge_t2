@@ -71,12 +71,12 @@ def init_app(app):
                     'INSERT INTO station_code (station_id, code)'
                     ' VALUES (?, "NO CODE")', [station['id']]
                 )
-            else:
-                db.execute(
-                    'UPDATE station_code'
-                    ' SET code = "NO CODE"'
-                    ' WHERE station_id = ?', [station['id']]
-                )
+            # else:
+            #     db.execute(
+            #         'UPDATE station_code'
+            #         ' SET code = "NO CODE"'
+            #         ' WHERE station_id = ?', [station['id']]
+            #     )
         db.commit()
 
 

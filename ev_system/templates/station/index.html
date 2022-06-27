@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=0">
-{#<meta http-equiv="refresh" content="10" >#}
+<meta http-equiv="refresh" content="10" >
 <link rel="stylesheet" href="{{ url_for('static', filename='w3.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='blue_theme.css') }}">
 
 <style>
-  {#  html {#}
-  {#  transform: rotate(-90deg);#}
-  {#  transform-origin: left top;#}
-  {#  width: 100vh;#}
-  {#  overflow-x: hidden;#}
-  {#  position: absolute;#}
-  {#  top: 100%;#}
-  {#  left: 0;#}
-  {# } #}
+    @media screen and (orientation: landscape) {
+        html {
+            transform: rotate(-90deg);
+            transform-origin: left top;
+            width: 100vh;
+            overflow-x: hidden;
+            position: absolute;
+            top: 100%;
+            left: 0;
+        }
+    }
 
     .qr_code {
-        height: 200px;
+        height: 180px;
         {#margin-top: 25px;#}
         {#margin-bottom: 25px;#}
     }
 
     .top_panel {
-        height: 200px;
+        {#height: 200px;#}
     }
 
 </style>
@@ -45,20 +47,21 @@ STATION {{ station_name }}
 </head>
 
 <body>
-<div class="w3-container" style="margin-bottom: 20px">
+<div class="" style="margin-bottom: 20px">
 
 {% if (station_status=="scheduled") or (station_status=="evacuate") %}
     {% if station_code!="NO CODE" %}
-        <div class="w3-panel w3-theme-l1 w3-center top_panel" ><img class="w3-image qr-code" src="{{ qrcode(station_code) }}"></div>
-        <div class="w3-panel w3-theme-d2 w3-center w3-xxlarge">OR SMS <span class="w3-text-light-blue">#{{ station_code }}</span> TO <span class="w3-text-light-green">*1234</span></div>
+        <div class="w3-theme-l1 w3-center top_panel" ><img class="w3-image w3-panel qr-code" style="height: 180px" src="{{ qrcode(code_url) }}"></div>
+        <div class="w3-theme-d2 w3-center w3-xlarge">SCAN TO VERIFY<br/>OR SMS:<br/><span class="w3-text-light-blue">#{{ station_code }}</span><br/>TO <span class="w3-text-light-green">*1234</span></div>
     {% else %}
-        <div class="w3-panel w3-red w3-center w3-xxxlarge top_panel">NO CODE</div>
+        <div class="w3-red w3-center w3-xxxlarge top_panel" style="height: 180px">NO CODE</div>
     {% endif %}
-{% elif station_status=="charing" %}
-    <div class="w3-panel w3-theme w3-center w3-xxxlarge top_panel">CHARGING</div>
+{% elif station_status=="charging" %}
+    <div class="w3-theme-l1 w3-center top_panel" ><img class="w3-image w3-panel qr-code" style="height: 180px" src="{{ qrcode(code_url) }}"></div>
+    <div class="w3-theme-d2 w3-center w3-xlarge">CHARGING UNTIL<br/>{{ end_time }}</div>
 {% else %}
-    <div class="w3-panel w3-theme-l1 w3-center top_panel"><img class="w3-image qr_code" src="{{ qrcode('register_this_station') }}"></div>
-    <div class="w3-panel w3-theme-d2 w3-center w3-xxlarge">OR SMS <span class="w3-text-light-blue">register {{ station_name }}</span> TO <span class="w3-text-light-green">*1234</span></div>
+    <div class="w3-theme-l1 w3-center top_panel"><img class="w3-image w3-panel qr_code" style="height: 180px" src="{{ qrcode(url_for('request.request_page', _external=True)) }}"></div>
+    <div class="w3-theme-d2 w3-center w3-xlarge">SCAN TO REGISTER<br/>OR SMS:<br/><span class="w3-text-light-blue">register {{ station_name }}</span><br/>TO <span class="w3-text-light-green">*1234</span></div>
 {% endif %}
 </div>
 </body>

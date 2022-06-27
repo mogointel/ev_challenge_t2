@@ -10,6 +10,16 @@ print("Using random seed {}".format(rand_seed))
 random.seed(rand_seed)
 
 
+def generate_code(station_id, db):
+    if db is not None:
+        code_num = random.randrange(100000000)
+        code = f"{code_num:08d}"
+        db.execute(
+            'UPDATE station_code'
+            ' SET code = ?'
+            ' WHERE station_id = ?', (code, station_id))
+
+
 def periodic_check(db, ):
 
     # time = datetime.datetime.now()
@@ -38,6 +48,12 @@ def periodic_check(db, ):
                 'UPDATE station_code'
                 ' SET code = ?'
                 ' WHERE station_id = ?', (code, req['station_id'])
+            )
+
+            db.execute(
+                'UPDATE stations'
+                ' SET status = \'scheduled\''
+                ' WHERE id = ?', [req['station_id']]
             )
 
             db.execute(

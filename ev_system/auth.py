@@ -32,7 +32,7 @@ def register():
                 db.execute(
                     "INSERT INTO user (username, password, wwid, license, car_type, monthly_credits, current_credits,"
                     " email) VALUES (?, ?, ?, ?, ?, ? ,?, ?)",
-                    (username, generate_password_hash(password), wwid, license, car_type, 100, 100, email),
+                    (username, generate_password_hash(password), wwid, license, car_type, 1000, 1000, email),
                 )
                 db.commit()
             except db.IntegrityError:
