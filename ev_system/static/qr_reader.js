@@ -18,17 +18,18 @@ qrcode.callback = (res) => {
     outputData.innerText = res;
     qrResult.hidden = false;
 
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", window.location.href, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onreadystatechange = function () {
-        if (this.readyState == 4) {
-            window.location.href = this.response;
-        }
-    }
-    xhr.send(JSON.stringify({
-        code: res
-    }));
+    // let xhr = new XMLHttpRequest();
+    // xhr.open("POST", window.location.href, true);
+    // xhr.setRequestHeader('Content-Type', 'application/json');
+    // xhr.onreadystatechange = function () {
+    //     if (this.readyState == 4) {
+    //         window.location.href = this.response;
+    //     }
+    // }
+    // xhr.send(JSON.stringify({
+    //     code: res
+    // }));
+    window.location.href = res;
   }
 };
 
@@ -42,19 +43,24 @@ function stop_scan() {
 }
 
 function start_scan() {
-    scan_count = 10;
-    navigator.mediaDevices
-    .getUserMedia({ video: { facingMode: "environment" } })
-    .then(function(stream) {
-      scanning = true;
-      qrResult.hidden = true;
-      canvasElement.hidden = false;
-      video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
-      video.srcObject = stream;
-      video.play();
-      tick();
-      scan();
-    });
+    scan_count = 50;
+    let camera = navigator.mediaDevices
+    .getUserMedia({ video: { facingMode: "environment" } });
+
+    if (camera != null) {
+        camera.then(function (stream) {
+            scanning = true;
+            qrResult.hidden = true;
+            canvasElement.hidden = false;
+            video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+            video.srcObject = stream;
+            video.play();
+            tick();
+            scan();
+        });
+    } else {
+        canvasElement.parentElement.innerText = "Please use external QR scanner";
+    }
 }
 
 btnScanQR.onclick = () => {
@@ -85,18 +91,19 @@ function scan() {
         setTimeout(scan, 300);
       }
     } else {
+        btnScanQR.innerText = "Verify";
         stop_scan();
 
-        let xhr = new XMLHttpRequest();
-        xhr.open("POST", window.location.href, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function () {
-        if (this.readyState == 4) {
-            window.location.href = this.response;
-        }
-    }
-        xhr.send(JSON.stringify({
-            code: "1234"
-    }));
+    //     let xhr = new XMLHttpRequest();
+    //     xhr.open("POST", window.location.href, true);
+    //     xhr.setRequestHeader('Content-Type', 'application/json');
+    //     xhr.onreadystatechange = function () {
+    //     if (this.readyState == 4) {
+    //         window.location.href = this.response;
+    //     }
+    // }
+    //     xhr.send(JSON.stringify({
+    //         code: "1234"
+    // }));
     }
 }

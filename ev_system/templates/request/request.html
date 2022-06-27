@@ -42,9 +42,11 @@
   <select class="w3-input" name="bldg" id="bldg">
         <option selected="selected" value="-1">Any</option>
         {% for site in buildings %}
+            {%  if site != -1 %}
             {% for bldg in buildings[site] %}
                 <option value="{{ bldg }}">{{ bldg }}</option>
             {% endfor %}
+            {% endif %}
         {% endfor %}
     </select>
     <label for="duration">Duration</label>
